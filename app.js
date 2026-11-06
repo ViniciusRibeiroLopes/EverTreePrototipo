@@ -6,11 +6,11 @@
     KEY = "evertree-ihc-2026-v2",
     OLD = "evertree-ihc-2026-v1";
   const names = {
-    jardim: "Meu ecossistema",
-    floresta: "Espécies & cultivo",
-    melhorias: "Melhorias",
+    jardim: "Floresta",
+    floresta: "Coleção",
+    melhorias: "Recursos & melhorias",
     laboratorio: "Laboratório",
-    global: "Reflorestamento global",
+    global: "Legado",
     conquistas: "Diário da floresta",
     configuracoes: "Preferências & save",
   };
@@ -132,23 +132,24 @@
     }
   }
   function navigate(view, focus = false) {
-    if (!names[view]) view = "jardim";
+    if (!names[view]) view = 'jardim';
     currentView = view;
-    Object.keys(names).forEach((v) => ($("view-" + v).hidden = v !== view));
-    document.querySelectorAll("[data-nav]").forEach((b) => {
+    Object.keys(names).filter(v => v !== 'jardim').forEach(v => $('view-'+v).hidden = v !== view);
+    document.querySelectorAll('[data-nav]').forEach(b => {
       const active = b.dataset.nav === view;
-      b.classList.toggle("active", active);
-      if (active) b.setAttribute("aria-current", "page");
-      else b.removeAttribute("aria-current");
+      b.classList.toggle('active', active);
+      if (active) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
     });
-    text("breadcrumb", names[view]);
-    history.replaceState(null, "", "#" + view);
+    text('breadcrumb', names[view]);
+    history.replaceState(null,'','#'+view);
+    const panel=$('game-panel');
+    if(view==='jardim') { if(panel.open)panel.close(); }
+    else if(!panel.open)panel.showModal();
+    if(view!=='jardim')$('game-panel').querySelector('.panel-content').scrollTop=0;
     render();
-    if (focus) {
-      $("content").focus({ preventScroll: true });
-      window.scrollTo({ top: 0, behavior: "instant" });
-    }
+    if(focus && view==='jardim')$('tree-button').focus({preventScroll:true});
   }
+
   function resourceCards() {
     const b = E.budget(state),
       cap = E.capacities(state);
@@ -182,186 +183,76 @@
     });
   }
   function renderScene() {
-    const r = E.recovery(state),
-      c = E.climate(state),
-      scene = $("scene"),
-      bio = E.BIOMES.find((b) => b.id === state.biome),
-      sp = E.SPECIES.find((t) => t.id === state.activeSpecies);
-    scene.style.setProperty(
-      "--sky-top",
-      `hsl(${170 + r * 0.23} ${8 + r * 0.28}% ${72 + r * 0.07}%)`,
-    );
-    scene.style.setProperty(
-      "--sky-bottom",
-      `hsl(${58 + r * 0.3} ${17 + r * 0.21}% 84%)`,
-    );
-    scene.style.setProperty(
-      "--far",
-      `hsl(${95 + r * 0.24} ${10 + r * 0.13}% ${64 + r * 0.01}%)`,
-    );
-    scene.style.setProperty(
-      "--middle",
-      `hsl(${85 + r * 0.22} ${12 + r * 0.15}% ${59 + r * 0.02}%)`,
-    );
-    scene.style.setProperty(
-      "--near",
-      `hsl(${42 + r * 0.54} ${19 + r * 0.12}% ${55 + r * 0.01}%)`,
-    );
-    scene.style.setProperty("--life", Math.max(0, (r - 45) / 55));
-    scene.style.setProperty("--debris", Math.max(0, 1 - r / 55));
-    scene.style.setProperty("--river", Math.min(1, Math.max(0, (r - 25) / 40)));
-    scene.dataset.weather = c.weather;
-    text("scene-biome", bio.name.toUpperCase());
-    text("weather", `${c.icon} ${c.season} · ${c.name}`);
-    text("scene-species", sp.name.toUpperCase());
-    if ($("tree-art").dataset.tree !== sp.id) {
-      $("tree-art").innerHTML = treeSVG(sp.id);
-      $("tree-art").dataset.tree = sp.id;
+    const r=E.recovery(state), c=E.climate(state), scene=$('scene');
+    const bio=E.BIOMES.find(b=>b.id===state.biome),sp=E.SPECIES.find(t=>t.id===state.activeSpecies);
+    scene.style.setProperty('--sky-top',`hsl(${170+r*.23} ${8+r*.28}% ${60+r*.19}%)`);
+    scene.style.setProperty('--sky-bottom',`hsl(${58+r*.3} ${17+r*.21}% 79%)`);
+    scene.style.setProperty('--far',`hsl(${95+r*.24} ${10+r*.13}% ${48+r*.17}%)`);
+    scene.style.setProperty('--middle',`hsl(${85+r*.22} ${12+r*.15}% ${40+r*.21}%)`);
+    scene.style.setProperty('--near',`hsl(${42+r*.54} ${19+r*.12}% ${38+r*.18}%)`);
+    scene.style.setProperty('--life',Math.max(0,(r-45)/55));scene.style.setProperty('--debris',Math.max(0,1-r/55));scene.style.setProperty('--river',Math.min(1,Math.max(0,(r-25)/40)));scene.dataset.weather=c.weather;
+    document.body.style.setProperty('--forest-life',r/100);
+    text('scene-biome',bio.name);text('weather',`${c.icon} ${c.name}`);
+    $('weather').title=`${c.season} · muda em ${c.remaining}s. Clique para ver os efeitos.`;
+    text('scene-species',sp.name);
+    if($('tree-art').dataset.tree!==sp.id){$('tree-art').innerHTML=treeSVG(sp.id);$('tree-art').dataset.tree=sp.id;}
+    const treeKey=JSON.stringify(state.trees);
+    if($('forest-decoration').dataset.key!==treeKey){
+      const planted=E.SPECIES.flatMap(t=>Array.from({length:Math.min(3,state.trees[t.id])},()=>t.id)).slice(0,14);
+      const spots=[[340,426,.7],[160,419,.55],[730,435,.7],[525,377,.45],[85,360,.4],[810,352,.4],[250,347,.4],[650,350,.4],[425,350,.38],[45,460,.65],[860,475,.7],[575,450,.65],[125,490,.5],[360,505,.6]];
+      $('forest-decoration').innerHTML=planted.map((id,i)=>{const [x,y,k]=spots[i];return `<g transform="translate(${x-150*k} ${y-326*k}) scale(${k})">${treeSVG(id).replace(/^<svg[^>]*>/,'').replace(/<\/svg>$/,'')}</g>`;}).join('');
+      $('forest-decoration').dataset.key=treeKey;
     }
-    const count = Math.min(
-        8,
-        Math.max(0, Object.values(state.trees).reduce((a, b) => a + b, 0) - 1),
-      ),
-      decoKey = count + "-" + state.activeSpecies;
-    if ($("forest-decoration").dataset.key !== decoKey) {
-      $("forest-decoration").innerHTML = Array.from(
-        { length: count },
-        (_, i) => {
-          const spots = [
-              [210, 356, 0.36],
-              [650, 360, 0.42],
-              [90, 385, 0.43],
-              [760, 405, 0.55],
-              [315, 355, 0.3],
-              [570, 370, 0.37],
-              [35, 430, 0.55],
-              [840, 366, 0.34],
-            ],
-            [x, y, k] = spots[i];
-          return `<g transform="translate(${x - 150 * k} ${y - 326 * k}) scale(${k})">${treeSVG(
-            i % 2 ? "muda" : sp.id,
-          )
-            .replace(/^<svg[^>]*>/, "")
-            .replace(/<\/svg>$/, "")}</g>`;
-        },
-      ).join("");
-      $("forest-decoration").dataset.key = decoKey;
-    }
-    const phase = r < 20 ? 0 : r < 50 ? 1 : r < 85 ? 2 : 3;
-    text(
-      "chapter",
-      `CAPÍTULO 0${phase + 1} · ${["RENASCER", "ENRAIZAR", "FLORESCER", "REGENERAR"][phase]}`,
-    );
-    text(
-      "journey-copy",
-      [
-        "Um terreno ferido. Uma pequena muda. A mudança começa nas suas mãos.",
-        "O solo ganha força. Novas árvores começam a transformar a paisagem.",
-        "O rio volta a correr. Aos poucos, a fauna reencontra seu lar.",
-        "O ecossistema floresce. Seu cuidado pode alcançar novos horizontes.",
-      ][phase],
-    );
-    text(
-      "recovery-title",
-      [
-        "A terra pede cuidado",
-        "Raízes para recomeçar",
-        "A vida está voltando",
-        "Uma floresta viva",
-      ][phase],
-    );
-    text(
-      "recovery-copy",
-      [
-        "Remova as marcas da degradação e plante as primeiras árvores.",
-        "O terreno se regenera. Diversifique os plantios e cuide dos recursos.",
-        "Água em movimento, pássaros no céu. Continue fortalecendo a floresta.",
-        "Você transformou esta paisagem. Prepare sua próxima expedição.",
-      ][phase],
-    );
-    text("recovery-percent", fmt(r) + "%");
-    text("side-restored", fmt(r) + "% do ecossistema recuperado");
-    $("side-progress").style.width = r + "%";
-    $("recovery-bar").style.width = r + "%";
-    ["soil", "water", "life"].forEach((id, i) =>
-      $("stage-" + id).classList.toggle("done", r >= [20, 45, 75][i]),
-    );
-    text("climate-icon", c.icon);
-    text("climate-name", `${c.season} · ${c.name}`);
-    text(
-      "climate-effect",
-      c.weather === "chuva"
-        ? "Água ×2,2 · produção +25%."
-        : c.weather === "seca"
-          ? state.wateredUntil > state.age
-            ? "Regador ativo: redução da seca neutralizada."
-            : "Produção −40%. Use seus regadores."
-          : "Luz +20% para sua floresta.",
-    );
-    text(
-      "climate-countdown",
-      `Próxima previsão em ${c.remaining}s · estação em ${180 - (state.age % 180)}s`,
-    );
-    text("water-button", `Regar · ${state.cans}`);
-    $("water-button").disabled = state.cans < 1;
-    const b = E.budget(state);
-    text(
-      "production-note",
-      state.damageUntil > state.age
-        ? `Recuperação pós-evento: produção −35% por mais ${state.damageUntil - state.age}s.`
-        : b.efficiency < 0.99
-          ? `Recursos limitantes: árvores produzindo a ${fmt(b.efficiency * 100)}% da capacidade. Reponha recursos ou invista em melhorias.`
-          : b.demand.some((value, i) => value > b.income[i])
-            ? "Suas reservas estão cobrindo um déficit. Reponha recursos antes que a produção diminua."
-            : "Ecossistema equilibrado. A reposição de recursos sustenta sua produção atual.",
-    );
-    const locked = E.SPECIES.find(
-      (t) => !t.hybrid && !state.discovered.includes(t.id),
-    );
-    text(
-      "mission-title",
-      locked
-        ? `Descobrir ${locked.name}`
-        : E.canPrestige(state)
-          ? "Sua floresta está pronta para ser doada"
-          : "Rumo a um ecossistema recuperado",
-    );
-    text(
-      "mission-copy",
-      locked
-        ? `${fmt(state.lifetime)} / ${fmt(locked.threshold)} folhas produzidas.`
-        : `${fmt(state.lifetime)} / 5.000 folhas · ${fmt(r)}% recuperado.`,
-    );
-    $("event-box").hidden = !state.event;
-    $("event-alert").hidden = !state.event;
-    if (state.event)
-      text("event-alert", "Socorrer · " + state.event.left + "s");
-    if (state.event) {
-      const e = state.event;
-      const fire = e.type === "fire";
-      $("event-box").className = "event-box " + (fire ? "fire" : "");
-      text(
-        "event-copy",
-        `${fire ? "Foco de incêndio" : "Pragas nas folhas"} · ${e.left}s · ${e.hits}/${e.target} cuidados. Sem ação: −35% de produção por 90s.`,
-      );
-      text(
-        "event-action",
-        fire
-          ? "Apagar foco de fogo · clique ou Enter"
-          : "Espantar pragas · clique ou Enter",
-      );
-      $("event-progress").style.width = (e.hits / e.target) * 100 + "%";
-      if (!seenEvent) {
-        toast(
-          fire
-            ? "Um foco de incêndio apareceu no ecossistema."
-            : "Pragas apareceram no ecossistema.",
-        );
-        seenEvent = true;
-      }
-    } else seenEvent = false;
-    audio.update(r, c.weather);
+    text('world-caption',r<20?'Uma semente. Um recomeço.':r<50?'As raízes estão despertando.':r<85?'A vida está voltando.':'O mundo ficou um pouco mais verde.');
+    text('recovery-percent',fmt(r)+'%');$('recovery-bar').style.width=r+'%';
+    const locked=E.SPECIES.find(t=>!t.hybrid&&!state.discovered.includes(t.id));
+    text('next-name',locked?locked.name:E.canPrestige(state)?'Uma nova expedição':'Floresta recuperada');
+    text('next-progress-label',locked?`${fmt(state.lifetime)} / ${fmt(locked.threshold)}`:fmt(r)+'%');
+    $('next-progress').style.width=Math.min(100,locked?state.lifetime/locked.threshold*100:r)+'%';
+    $('next-unlock').dataset.nav=locked?'floresta':'global';
+    text('water-button',`◈ ${state.cans}`);$('water-button').disabled=state.cans<1;
+    $('water-button').setAttribute('aria-label',`Usar regador. ${state.cans} disponíveis.`);
+    $('water-button').classList.toggle('needed',c.weather==='seca'&&state.wateredUntil<=state.age);
+    const b=E.budget(state), cap=E.capacities(state);
+    if(!$('quick-resources').children.length)$('quick-resources').innerHTML=[['water','◈','Água'],['soil','♧','Solo'],['sun','☼','Luz']].map(([id,icon,label])=>`<button class="resource-orb ${id}" data-action="tend" data-id="${id}"><span>${icon}</span><small>${label}</small><i><em></em></i></button>`).join('');
+    [...$('quick-resources').children].forEach((button,i)=>{const key=['water','soil','sun'][i],level=state.resources[key]/cap[key];button.querySelector('em').style.width=level*100+'%';button.classList.toggle('low',level<.2);const label=`${['Água','Nutrientes','Luz'][i]}: ${fmt(state.resources[key])}/${cap[key]}. Entrada +${fmt(b.income[i],1)}/s; consumo ${fmt(b.demand[i],1)}/s. Clique: +12.`;button.title=label;button.setAttribute('aria-label',label);});
+    const shortage=b.efficiency<.99, damage=state.damageUntil>state.age;
+    $('care-warning').hidden=!shortage&&!damage;
+    text('care-warning',damage?`♧ Recuperando · ${state.damageUntil-state.age}s`:'⚠ Recursos baixos · cuidar');
+    $('event-box').hidden=!state.event;$('event-alert').hidden=!state.event;
+    if(state.event){const e=state.event,fire=e.type==='fire';text('event-alert',`⚠ ${e.left}s`);$('event-box').className='event-box '+(fire?'fire':'');text('event-copy',`${fire?'🔥 Incêndio!':'🐛 Pragas!'} · ${e.left}s`);text('event-action',`${fire?'Apagar':'Espantar'} · ${e.hits}/${e.target}`);$('event-action').setAttribute('aria-label',fire?'Apagar foco de incêndio':'Espantar pragas');$('event-action').title='Complete 8 ações. Falha: produção −35% por 90s.';$('event-progress').style.width=e.hits/e.target*100+'%';if(!seenEvent){toast(fire?'🔥 Proteja sua floresta!':'🐛 Pragas na floresta!');seenEvent=true;}}else seenEvent=false;
+    audio.update(r,c.weather);
+    renderShop();renderGrove();
   }
+  let shopTab='trees';
+  const shortNames={muda:'Muda pioneira',ipe:'Ipê-amarelo',jacaranda:'Jacarandá',sequoia:'Sequoia',aurora:'Aurora',lumina:'Lúmina',luvas:'Luvas de cultivo',cisterna:'Cisterna',composto:'Composteira',luz:'Clareira',viveiro:'Viveiro'};
+  function renderShop(){
+    const items=shopTab==='trees'?E.SPECIES:E.UPGRADES;
+    const next=E.SPECIES.find(t=>!t.hybrid&&!state.discovered.includes(t.id));
+    const visible=items.filter(t=>shopTab!=='trees'||state.discovered.includes(t.id)||t.id===next?.id);
+    const signature=JSON.stringify([shopTab,visible.map(t=>t.id),state.discovered,state.biome]);
+    if($('shop-items').dataset.signature!==signature){
+      html('shop-items',visible.map(t=>{const locked=shopTab==='trees'&&!state.discovered.includes(t.id);return `<div class="shop-row ${locked?'locked':''}"><button class="shop-buy" data-shop-buy="${shopTab==='trees'?'tree':'upgrade'}" data-id="${t.id}"><span class="shop-art">${locked?'<span class="unknown-tree">?</span>':shopTab==='trees'?treeSVG(t.id,true):`<span class="upgrade-glyph">${t.icon}</span>`}</span><span class="shop-copy"><strong>${locked?'???':shortNames[t.id]}</strong><small class="shop-price"></small></span><b class="shop-owned"></b></button><button class="shop-info" data-action="${shopTab==='trees'?'fact':'upgrade-info'}" data-id="${t.id}" aria-label="Detalhes: ${t.name}">i</button></div>`;}).join(''));
+      $('shop-items').dataset.signature=signature;
+    }
+    [...$('shop-items').querySelectorAll('.shop-row')].forEach((row,i)=>{const item=visible[i],tree=shopTab==='trees',locked=tree&&!state.discovered.includes(item.id),allowed=!tree||E.eligible(state,item),price=E.cost(state,tree?'tree':'upgrade',item.id),count=(tree?state.trees:state.upgrades)[item.id],button=row.querySelector('.shop-buy');
+      row.querySelector('.shop-price').textContent=locked?`🔒 ${fmt(item.threshold)} folhas totais`:!allowed?'Outro bioma':`❧ ${fmt(price)}`;
+      row.querySelector('.shop-owned').textContent=locked?'':count;
+      button.disabled=locked||!allowed||state.leaves<price||count>=100;
+      button.setAttribute('aria-label',locked?`Descobrir ${item.name} em ${item.threshold} folhas`:`Comprar ${item.name} por ${price} folhas. ${count} em uso.`);
+      button.title=locked?`Produza ${item.threshold} folhas para descobrir.`:tree?`+${fmt(item.rate,1)} folhas/s de base por árvore. Clique em i para saber mais.`:item.desc;
+      row.classList.toggle('affordable',!button.disabled);
+    });
+  }
+  function renderGrove(){
+    const trees=E.SPECIES.filter(t=>state.trees[t.id]>0),count=Object.values(state.trees).reduce((a,b)=>a+b,0);
+    text('tree-count',`${count} ${count===1?'árvore':'árvores'}`);
+    const signature=JSON.stringify([state.trees,state.activeSpecies]);
+    if($('grove-rows').dataset.signature===signature)return;
+    html('grove-rows',trees.map(t=>`<button class="grove-row ${state.activeSpecies===t.id?'selected':''}" data-action="display" data-id="${t.id}" title="Exibir ${t.name} como árvore principal"><span class="grove-name">${shortNames[t.id]} <b>×${state.trees[t.id]}</b></span><span class="grove-sprites" aria-hidden="true">${Array.from({length:Math.min(9,state.trees[t.id])},()=>treeSVG(t.id,true)).join('')}</span></button>`).join('')+(trees.length<2?'<div class="grove-empty"><span>✧</span> Sua próxima árvore está na loja →</div>':''));
+    $('grove-rows').dataset.signature=signature;
+  }
+
   function renderSpecies() {
     const signature = JSON.stringify([
       state.trees,
@@ -511,7 +402,7 @@
     drawCharts();
   }
   function render() {
-    text("top-leaves", fmt(state.leaves));
+    
     text("garden-leaves", fmt(state.leaves));
     text("click-rate", "+" + fmt(E.clickRate(state), 1));
     text("idle-rate", "+" + fmt(E.budget(state).rate, 1));
@@ -520,12 +411,14 @@
     $("demo-banner").hidden = !demo;
     $("exit-demo").hidden = !demo;
     $("demo-button").hidden = demo;
-    text("sound-toggle", audio.enabled ? "♫ Som ligado" : "♫ Ativar som");
+    text("sound-toggle", audio.enabled ? "♫" : "♪");
+    $("sound-toggle").title=audio.enabled ? "Desligar som" : "Ativar som";
+    $("sound-toggle").setAttribute("aria-label", $("sound-toggle").title);
     $("sound-toggle").setAttribute("aria-pressed", String(audio.enabled));
     $("sound-setting").checked = audio.enabled;
     $("motion-setting").checked = state.settings.motion;
     renderScene();
-    if (currentView === "jardim") renderResources("resources");
+    
     if (currentView === "melhorias") {
       renderResources("resource-detail");
       renderUpgrades();
@@ -609,9 +502,15 @@
     );
   }
   function showNextCard() {
-    if (!$("info-dialog").open && cardQueue.length)
-      fact(cardQueue.shift(), true);
+    if(!cardQueue.length)return;
+    const id=cardQueue.shift(),t=E.SPECIES.find(t=>t.id===id);
+    if(!t)return;
+    const notice=document.createElement('div');notice.className='toast discovery-toast';
+    const label=document.createElement('span');label.textContent=`✦ ${t.name} desbloqueado!`;
+    const button=document.createElement('button');button.textContent='Conhecer';button.dataset.action='fact';button.dataset.id=id;
+    notice.append(label,button);$('toast-stack').append(notice);setTimeout(()=>notice.remove(),6500);
   }
+
   function drawChart(id, type, rows) {
     const canvas = $(id),
       rect = canvas.getBoundingClientRect();
@@ -836,6 +735,10 @@
     );
   }
   document.addEventListener("click", (event) => {
+    const shop=event.target.closest('[data-shop]');
+    if(shop){setShopTab(shop.dataset.shop);return;}
+    const buying=event.target.closest('[data-shop-buy]');
+    if(buying&&!buying.disabled){action(()=>E.buy(state,buying.dataset.shopBuy,buying.dataset.id));return;}
     const nav = event.target.closest("[data-nav]");
     if (nav) {
       navigate(nav.dataset.nav, true);
@@ -845,6 +748,13 @@
     if (!b || b.disabled) return;
     const id = b.dataset.id;
     switch (b.dataset.action) {
+      case 'climate-info': {
+        const c=E.climate(state);text('dialog-eyebrow',c.season);
+        dialog(c.icon+' '+c.name,c.weather==='chuva'?'Água ×2,2 e produção +25%.':c.weather==='seca'?'Produção −40%. Use um regador para proteger sua floresta por 60 segundos.':'Luz solar +20%. Hora de crescer.',[{label:'Jogar',primary:true}]);break;
+      }
+      case 'upgrade-info': {
+        const u=E.UPGRADES.find(u=>u.id===id);text('dialog-eyebrow','MELHORIA');dialog(u.name,u.desc,[{label:'Entendi',primary:true}]);break;
+      }
       case "tend":
         action(() => E.tend(state, id));
         break;
@@ -876,7 +786,9 @@
       n.className = "floating-leaf";
       n.textContent = "+" + fmt(r.amount, 1) + " ❧";
       n.style.setProperty("--drift", Math.random() * 60 - 30 + "px");
-      $("scene").append(n);
+      $("click-stage").append(n);
+      $("tree-button").classList.remove("clicked");void $("tree-button").offsetWidth;$("tree-button").classList.add("clicked");
+      $("tap-hint").classList.add("experienced");
       setTimeout(() => n.remove(), 1000);
       audio.click();
     });
@@ -1042,6 +954,16 @@
       drawCharts();
     });
   });
+
+  function setShopTab(value){
+    shopTab=value==='upgrades'?'upgrades':'trees';
+    document.querySelectorAll('[data-shop]').forEach(b=>{const on=b.dataset.shop===shopTab;b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;});
+    $('shop-items').setAttribute('aria-labelledby',shopTab==='trees'?'tab-trees':'tab-upgrades');renderShop();
+  }
+  document.querySelector('.shop-tabs').addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();setShopTab(e.key==='Home'?'trees':e.key==='End'?'upgrades':shopTab==='trees'?'upgrades':'trees');$(shopTab==='trees'?'tab-trees':'tab-upgrades').focus();});
+  $('panel-close').addEventListener('click',()=>navigate('jardim'));
+  $('game-panel').addEventListener('close',()=>{if(currentView!=='jardim')navigate('jardim');});
+
   window.addEventListener("resize", () => {
     if (currentView === "conquistas") drawCharts();
   });

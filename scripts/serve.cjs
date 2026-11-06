@@ -10,6 +10,7 @@ const types = {
 const allowed = new Set([
   "index.html",
   "styles.css",
+  "game.css",
   "engine.js",
   "app.js",
   "audio.js",

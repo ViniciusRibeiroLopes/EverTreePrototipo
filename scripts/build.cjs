@@ -6,6 +6,7 @@ fs.mkdirSync(out, { recursive: true });
 for (const file of [
   "index.html",
   "styles.css",
+  "game.css",
   "engine.js",
   "app.js",
   "audio.js",

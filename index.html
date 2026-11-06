@@ -9,112 +9,38 @@
       content="EverTree: restaure ecossistemas, descubra espécies e leve sua floresta ao mundo."
     />
     <title>EverTree · Cada gesto regenera</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css" /><link rel="stylesheet" href="game.css" />
     <script defer src="engine.js"></script>
     <script defer src="audio.js"></script>
     <script defer src="app.js"></script>
   </head>
-  <body>
-    <a class="skip-link" href="#content">Pular para o conteúdo</a>
-    <div class="app-shell">
-      <aside class="sidebar" aria-label="Menu principal">
-        <a class="brand" href="#jardim"
-          ><span class="brand-icon">✳</span
-          ><span
-            ><strong>EverTree</strong><small>CADA GESTO REGENERA</small></span
-          ></a
-        >
-        <span class="nav-caption">SUA JORNADA</span>
-        <nav class="nav-list">
-          <button class="nav-item active" data-nav="jardim">
-            <span>⌂</span> Meu ecossistema
-          </button>
-          <button class="nav-item" data-nav="floresta">
-            <span>♧</span> Espécies & cultivo
-          </button>
-          <button class="nav-item" data-nav="melhorias">
-            <span>✦</span> Melhorias
-          </button>
-          <button class="nav-item" data-nav="laboratorio">
-            <span>⚘</span> Laboratório
-          </button>
-          <button class="nav-item" data-nav="global">
-            <span>◎</span> Reflorestamento global
-          </button>
-          <button class="nav-item" data-nav="conquistas">
-            <span>▥</span> Diário da floresta
-          </button>
-        </nav>
-        <div class="sidebar-note">
-          <span class="little-leaf">❧</span>
-          <h3>O futuro cria raízes.</h3>
-          <p>Recupere a terra.<br />Devolva espaço à vida.</p>
-          <div class="sidebar-progress"><i id="side-progress"></i></div>
-          <small id="side-restored">0% do ecossistema recuperado</small>
-        </div>
-        <button class="nav-item settings-nav" data-nav="configuracoes">
-          <span>⚙</span> Preferências & save
-        </button>
-        <div class="sidebar-foot">
-          PROJETO IHC <span>•</span> EDIÇÃO REGENERAÇÃO
-        </div>
-      </aside>
-      <div class="workspace">
-        <header class="topbar">
-          <div class="breadcrumb">
-            <span class="status-dot"></span> JORNADA <span>/</span>
-            <strong id="breadcrumb">Meu ecossistema</strong>
-          </div>
-          <div class="top-actions">
-            <button
-              id="event-alert"
-              class="event-alert"
-              data-nav="jardim"
-              hidden
-            >
-              Socorrer floresta</button
-            ><button
-              id="sound-toggle"
-              class="quiet-button"
-              aria-pressed="false"
-            >
-              ♫ <span>Som desligado</span></button
-            ><span class="balance"
-              >❧ <b id="top-leaves">0</b> <small>folhas</small></span
-            ><button
-              class="avatar"
-              data-nav="configuracoes"
-              aria-label="Preferências"
-            >
-              V
-            </button>
-          </div>
-        </header>
-        <main id="content" tabindex="-1">
-          <section class="view" id="view-jardim" aria-labelledby="jardim-title">
-            <div class="page-heading">
-              <div>
-                <span class="eyebrow">UM NOVO COMEÇO</span>
-                <h1 id="jardim-title">A vida encontra <em>um caminho.</em></h1>
-                <p id="journey-copy">
-                  Um terreno ferido. Uma pequena muda. A mudança começa nas suas
-                  mãos.
-                </p>
-              </div>
-              <span class="chapter-pill" id="chapter"
-                >CAPÍTULO 01 · RENASCER</span
-              >
-            </div>
-            <div class="resource-grid" id="resources"></div>
-            <div class="garden-layout">
-              <div class="scene-card" id="scene">
-                <div class="scene-top">
-                  <span class="scene-tag"
-                    ><i class="status-dot"></i>
-                    <span id="scene-biome">MATA ATLÂNTICA</span></span
-                  ><span class="weather-tag" id="weather">☀ Primavera</span>
-                </div>
-                <svg
+
+<body class="clicker-edition">
+<a class="skip-link" href="#content">Pular para o jogo</a>
+<header class="game-header">
+  <a class="game-brand" href="#jardim"><span>✳</span> EverTree <small>REGENERAÇÃO</small></a>
+  <nav class="game-nav" aria-label="Menu do jogo">
+    <button data-nav="floresta"><span>♧</span> Coleção</button>
+    <button data-nav="laboratorio"><span>⚘</span> Laboratório</button>
+    <button data-nav="global"><span>✧</span> Legado</button>
+    <button data-nav="conquistas"><span>▥</span> Diário</button>
+  </nav>
+  <div class="header-tools"><button id="event-alert" class="event-alert" data-nav="jardim" hidden>Socorrer</button><button id="sound-toggle" aria-label="Ativar som" aria-pressed="false">♫</button><button data-nav="configuracoes" aria-label="Opções e save">⚙</button></div>
+</header>
+<main id="content" tabindex="-1">
+<section id="view-jardim" class="game-board" aria-label="Floresta e loja">
+  <div class="clicker-pane">
+    <div class="leaf-counter"><span class="counter-label">SUA FLORESTA PRODUZIU VIDA</span><h1><span id="garden-leaves">0</span> <small>folhas</small></h1><span class="idle-label"><b id="idle-rate">0,5</b> por segundo</span></div>
+    <div class="click-stage" id="click-stage">
+      <div class="tree-halo" aria-hidden="true"></div><div class="orbit orbit-one" aria-hidden="true">✧</div><div class="orbit orbit-two" aria-hidden="true">✦</div><div class="orbit orbit-three" aria-hidden="true">❧</div>
+      <button id="tree-button" class="tree-button" aria-label="Cuidar da árvore e ganhar folhas"><span id="tree-art"></span></button>
+      <div class="click-caption"><span id="scene-species">Muda pioneira</span><p><b id="click-rate">+2</b> por clique</p></div>
+    </div>
+    <div class="clicker-bottom"><span class="tap-hint" id="tap-hint">CLIQUE PARA DAR VIDA</span><button class="next-unlock" id="next-unlock" data-nav="floresta"><span>PRÓXIMA DESCOBERTA <b id="next-name">Ipê-amarelo</b></span><span id="next-progress-label">0 / 80</span><i><em id="next-progress"></em></i></button></div>
+  </div>
+  <div class="world-pane">
+    <div class="world-heading"><div><span class="tiny-label">SEU PEDACINHO DO MUNDO</span><h2 id="scene-biome">Mata Atlântica</h2></div><button id="weather" class="weather-tag" data-action="climate-info" aria-label="Ver clima">☀</button></div>
+    <div class="scene-card" id="scene"><svg
                   class="landscape"
                   viewBox="0 0 900 560"
                   preserveAspectRatio="xMidYMid slice"
@@ -239,111 +165,16 @@
                       fill="#e6c573"
                     />
                   </g>
-                </svg>
-                <div class="rain" aria-hidden="true"></div>
-                <button
-                  id="tree-button"
-                  class="tree-button"
-                  aria-label="Cuidar da árvore: ganhar folhas e recuperar o terreno"
-                >
-                  <span id="tree-art"></span>
-                </button>
-                <div class="scene-bottom">
-                  <span class="species-label" id="scene-species"
-                    >MUDA PIONEIRA</span
-                  ><strong>Cada toque, um pouco mais de vida.</strong
-                  ><small id="scene-hint"
-                    >Clique na árvore ou use Enter para cuidar.</small
-                  >
-                </div>
-                <div class="event-box" id="event-box" hidden>
-                  <span id="event-copy" role="status"></span
-                  ><button id="event-action" class="event-action">
-                    Proteger
-                  </button>
-                  <div class="event-track"><i id="event-progress"></i></div>
-                </div>
-              </div>
-              <aside class="garden-side">
-                <div class="leaf-summary">
-                  <div class="microheading">
-                    ENERGIA PARA TRANSFORMAR <span>❧</span>
-                  </div>
-                  <div class="leaf-number" id="garden-leaves">0</div>
-                  <p>folhas disponíveis</p>
-                  <div class="summary-stats">
-                    <div>
-                      <span>Por cuidado</span
-                      ><strong id="click-rate">+2</strong>
-                    </div>
-                    <div>
-                      <span>Por segundo</span
-                      ><strong id="idle-rate">+0,4</strong>
-                    </div>
-                  </div>
-                  <button class="lime-button" data-nav="floresta">
-                    Plantar uma nova árvore <span>↗</span>
-                  </button>
-                </div>
-                <div class="restoration-panel">
-                  <div class="microheading">
-                    SAÚDE DO ECOSSISTEMA <span id="recovery-percent">0%</span>
-                  </div>
-                  <div class="progress-track"><i id="recovery-bar"></i></div>
-                  <h3 id="recovery-title">A terra pede cuidado</h3>
-                  <p id="recovery-copy">
-                    Remova as marcas da degradação e plante as primeiras
-                    árvores.
-                  </p>
-                  <div class="restoration-stages">
-                    <span id="stage-soil">● Solo</span
-                    ><span id="stage-water">● Rios</span
-                    ><span id="stage-life">● Fauna</span>
-                  </div>
-                </div>
-              </aside>
-            </div>
-            <div class="garden-footer">
-              <div class="mission-card">
-                <span class="mission-icon">⚑</span>
-                <div>
-                  <small>SEU PRÓXIMO PASSO</small>
-                  <h3 id="mission-title">Dê espaço para a floresta crescer</h3>
-                  <p id="mission-copy">
-                    Acumule 25 folhas e plante mais uma muda.
-                  </p>
-                </div>
-                <button
-                  class="arrow-button"
-                  data-nav="floresta"
-                  aria-label="Ver espécies"
-                >
-                  ↗
-                </button>
-              </div>
-              <div class="weather-card">
-                <span class="weather-icon" id="climate-icon">☀</span>
-                <div>
-                  <h3 id="climate-name">Clima do momento</h3>
-                  <p id="climate-effect">A luz alimenta sua floresta.</p>
-                  <small id="climate-countdown"></small>
-                </div>
-                <button class="secondary-button" id="water-button">
-                  Regar · 3
-                </button>
-              </div>
-            </div>
-            <div class="ecosystem-note">
-              <span>↳</span>
-              <p id="production-note">
-                Equilibre água, nutrientes e luz para manter a produção.
-              </p>
-              <button data-nav="melhorias" class="text-button">
-                Gerenciar recursos →
-              </button>
-            </div>
-          </section>
-          <section
+                </svg><div class="rain" aria-hidden="true"></div><div class="world-caption" id="world-caption">Uma semente. Um recomeço.</div><div class="event-box" id="event-box" hidden><span id="event-copy" role="status"></span><button id="event-action" class="event-action">Proteger</button><div class="event-track"><i id="event-progress"></i></div></div></div>
+    <div class="world-health"><span>REGENERAÇÃO</span><div class="progress-track"><i id="recovery-bar"></i></div><strong id="recovery-percent">0%</strong></div>
+    <div class="grove-heading"><h3>Sua floresta</h3><span id="tree-count">1 árvore</span></div>
+    <div class="grove-rows" id="grove-rows"></div>
+    <div class="care-dock" aria-label="Cuidar dos recursos"><div id="quick-resources" class="quick-resources"></div><button id="water-button" class="water-action" title="Recupera água e protege da seca por 60 segundos">◈ <span>3</span></button><button class="care-details" data-nav="melhorias" aria-label="Ver detalhes dos recursos e clima">⋯</button></div>
+    <button class="care-warning" id="care-warning" data-nav="melhorias" hidden>Repor recursos</button>
+  </div>
+  <aside class="shop-pane" aria-labelledby="shop-title"><div class="shop-heading"><span class="tiny-label">PLANTE. CRESÇA. REPITA.</span><h2 id="shop-title">Loja</h2></div><div class="shop-tabs" role="tablist" aria-label="Tipo de compra"><button id="tab-trees" role="tab" aria-selected="true" aria-controls="shop-items" data-shop="trees">Árvores</button><button id="tab-upgrades" role="tab" aria-selected="false" aria-controls="shop-items" data-shop="upgrades" tabindex="-1">Melhorias</button></div><div id="shop-items" role="tabpanel" aria-labelledby="tab-trees"></div><div class="shop-foot"><span>❧</span> Cada árvore trabalha por você.</div></aside>
+</section>
+<dialog id="game-panel" aria-labelledby="breadcrumb"><div class="panel-toolbar"><span id="breadcrumb">Coleção</span><button id="panel-close" aria-label="Voltar ao jogo">✕</button></div><div class="panel-content">          <section
             class="view"
             id="view-floresta"
             hidden
@@ -353,7 +184,7 @@
               <div>
                 <span class="eyebrow">DIVERSIDADE QUE REGENERA</span>
                 <h1 id="floresta-title">
-                  Uma floresta, <em>muitas vidas.</em>
+                  Sua <em>coleção.</em>
                 </h1>
                 <p>
                   Plante espécies adequadas ao bioma e conheça o que cada uma
@@ -378,7 +209,7 @@
               <div>
                 <span class="eyebrow">CUIDAR TAMBÉM É PLANEJAR</span>
                 <h1 id="melhorias-title">
-                  Um ciclo mais <em>equilibrado.</em>
+                  Cuide da <em>floresta.</em>
                 </h1>
                 <p>
                   Aumente a reposição de recursos antes de expandir sua
@@ -404,7 +235,7 @@
               <div>
                 <span class="eyebrow">CURIOSIDADE EM FLOR</span>
                 <h1 id="laboratorio-title">
-                  Novas combinações, <em>novas histórias.</em>
+                  Laboratório de <em>sementes.</em>
                 </h1>
                 <p>
                   Um laboratório de polinização e descobertas para sua coleção.
@@ -468,7 +299,7 @@
               <div>
                 <span class="eyebrow">O CUIDADO NÃO TEM FRONTEIRAS</span>
                 <h1 id="global-title">
-                  Deixe raízes. <em>Leve esperança.</em>
+                  Seu <em>legado.</em>
                 </h1>
                 <p>
                   Doe uma floresta recuperada e comece uma nova expedição com
@@ -526,7 +357,7 @@
               <div>
                 <span class="eyebrow">SEU IMPACTO, DIA APÓS DIA</span>
                 <h1 id="conquistas-title">
-                  O diário de uma <em>transformação.</em>
+                  Diário da <em>floresta.</em>
                 </h1>
                 <p>
                   Dados reais da sua partida, amostrados a cada 30 segundos.
@@ -607,7 +438,7 @@
               <div>
                 <span class="eyebrow">DO SEU JEITO</span>
                 <h1 id="config-title">
-                  Cuide também da <em>sua experiência.</em>
+                  Opções <em>& save.</em>
                 </h1>
                 <p>
                   Seu progresso fica salvo neste navegador. Leve uma cópia para
@@ -689,13 +520,8 @@
               </button>
             </div>
           </section>
-        </main>
-        <footer class="app-footer">
-          <span>EverTree <b>·</b> Recomeçar também é crescer.</span
-          ><span>Feito para cultivar consciência.</span>
-        </footer>
-      </div>
-    </div>
+</div></dialog>
+</main>
     <div id="demo-banner" class="demo-banner" hidden>
       Demonstração temporária <button id="demo-fire">Testar incêndio</button
       ><button id="demo-pests">Testar pragas</button
