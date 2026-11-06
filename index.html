@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#153c31" />
+    <meta name="description" content="EverTree — protótipo de jogo clicker de cultivo de árvores para a disciplina de IHC." />
+    <title>EverTree · Sua floresta começa aqui</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Menu principal">
+        <div class="brand"><div class="brand-icon" aria-hidden="true">✳</div><div><strong>EverTree</strong><small>Um mundo mais verde</small></div></div>
+        <div class="nav-caption">EXPLORAR</div>
+        <nav class="nav-list" aria-label="Telas do protótipo">
+          <button class="nav-item active" data-nav="jardim" aria-current="page"><span class="nav-icon">⌂</span><span>Meu jardim</span></button>
+          <button class="nav-item" data-nav="melhorias"><span class="nav-icon">✦</span><span>Melhorias</span></button>
+          <button class="nav-item" data-nav="floresta"><span class="nav-icon">♣</span><span>Minha floresta</span></button>
+          <button class="nav-item" data-nav="conquistas"><span class="nav-icon">★</span><span>Conquistas</span></button>
+        </nav>
+        <div class="sidebar-spacer"></div>
+        <div class="sidebar-tip"><span aria-hidden="true">🌿</span><strong>Pequenos cliques,<br />grandes florestas.</strong><p>Cultive, evolua e veja seu mundo florescer!</p></div>
+        <div class="sidebar-foot">PROTÓTIPO IHC <span>•</span> 2026</div>
+      </aside>
+
+      <div class="workspace">
+        <header class="topbar">
+          <div class="mobile-brand"><span class="mobile-brand-mark">✳</span> EverTree</div>
+          <div class="topbar-left"><span class="online-dot"></span> Sua aventura verde está crescendo</div>
+          <div class="topbar-actions">
+            <div class="topbar-chip" title="Total de folhas disponíveis"><span>🍃</span><strong id="top-leaves">0</strong><small>folhas</small></div>
+            <div class="avatar" title="Seu jardim">L</div>
+          </div>
+        </header>
+
+        <main class="main-content" id="content">
+          <section class="view" id="view-jardim" aria-labelledby="jardim-title">
+            <div class="page-heading"><div><span class="eyebrow">BEM-VINDO À NATUREZA</span><h1 id="jardim-title">Seu jardim está <em>florescendo!</em> 🌱</h1><p>Cada folha conta. Clique na árvore para começar sua floresta.</p></div><div class="level-pill">🌳 <span id="header-level">Floresta nível 1</span></div></div>
+            <div class="garden-layout">
+              <div class="scene-card">
+                <div class="scene-top"><span class="scene-tag">✦ MEU CANTINHO VERDE</span><span class="species-tag" id="scene-species">🌱 Muda jovem</span></div>
+                <div class="scene-sun"></div><div class="scene-cloud cloud-one"></div><div class="scene-cloud cloud-two"></div>
+                <div class="scene-mountains" aria-hidden="true"></div>
+                <div class="tree-area"><button class="tree-button" id="tree-button" aria-label="Clicar na árvore para ganhar folhas" title="Clique para colher folhas"><span class="tree-illustration" id="tree-illustration" aria-hidden="true"></span></button></div>
+                <div class="scene-ground" aria-hidden="true"><span class="ground-flower flower-one">✿</span><span class="ground-flower flower-two">✿</span><span class="ground-flower flower-three">✿</span></div>
+                <div class="scene-instruction"><span class="tap-icon">☝</span> Clique na árvore para colher folhas!</div>
+              </div>
+              <div class="garden-side">
+                <div class="leaf-summary"><div class="summary-heading"><span>SUAS FOLHAS</span><span class="summary-icon">🍃</span></div><div class="leaf-number" id="garden-leaves">0</div><div class="summary-description">Use suas folhas para melhorar o jardim</div><div class="summary-stats"><div><span>Por clique</span><strong id="click-rate">+1 🍃</strong></div><div><span>Por segundo</span><strong id="idle-rate">+0 🍃</strong></div></div></div>
+                <div class="next-goal"><div class="section-microheading"><span>🎯</span> Próxima descoberta</div><div class="goal-row"><div><strong id="next-goal-name">Carvalho</strong><p id="next-goal-desc">Desbloqueie uma nova árvore</p></div><span class="goal-count" id="next-goal-count">0 / 120</span></div><div class="progress-track"><div class="progress-fill" id="next-goal-progress" style="width:0%"></div></div></div>
+                <button class="primary-button go-upgrades" data-nav="melhorias">Explorar melhorias <span>↗</span></button>
+              </div>
+            </div>
+            <div class="below-garden"><div class="notice-icon">💡</div><div><strong>Você sabia?</strong><span>Com melhorias automáticas, sua floresta continua crescendo mesmo sem clicar!</span></div><button data-nav="melhorias">Ver melhorias →</button></div>
+          </section>
+
+          <section class="view" id="view-melhorias" aria-labelledby="melhorias-title" hidden>
+            <div class="page-heading"><div><span class="eyebrow">FAÇA SEU JARDIM CRESCER</span><h1 id="melhorias-title">Melhorias para <em>evoluir</em> ✨</h1><p>Invista suas folhas e faça cada clique valer mais.</p></div><div class="level-pill">🍃 <span id="upgrade-balance">0 folhas disponíveis</span></div></div>
+            <div class="info-strip"><span class="info-strip-icon">💡</span><div><strong>Como funciona?</strong><span>Compre melhorias para ganhar mais folhas por clique ou automaticamente a cada segundo. O preço aumenta a cada compra.</span></div></div>
+            <div class="group-heading"><h2>🌿 Poder de clique</h2><p>Colha mais folhas a cada toque na árvore.</p></div>
+            <div class="upgrade-grid" id="click-upgrades"></div>
+            <div class="group-heading group-heading-spaced"><h2>⚙️ Produção automática</h2><p>Deixe sua floresta trabalhando por você.</p></div>
+            <div class="upgrade-grid" id="auto-upgrades"></div>
+          </section>
+
+          <section class="view" id="view-floresta" aria-labelledby="floresta-title" hidden>
+            <div class="page-heading"><div><span class="eyebrow">EXPLORE NOVOS LUGARES</span><h1 id="floresta-title">Sua própria <em>floresta</em> 🌳</h1><p>Descubra espécies e biomas conforme seu jardim cresce.</p></div><div class="level-pill">🌱 <span id="unlocked-total">1 de 7 descobertos</span></div></div>
+            <div class="info-strip"><span class="info-strip-icon">🧭</span><div><strong>Colete folhas para desbloquear</strong><span>Novidades são liberadas pela quantidade total de folhas já produzidas. Depois, selecione o visual e o bônus que preferir.</span></div></div>
+            <div class="group-heading"><h2>Espécies de árvores</h2><p>Escolha qual árvore vai crescer no seu jardim.</p></div>
+            <div class="discovery-grid" id="species-grid"></div>
+            <div class="group-heading group-heading-spaced"><h2>Biomas</h2><p>Transforme o ambiente em volta da sua árvore.</p></div>
+            <div class="discovery-grid" id="biome-grid"></div>
+          </section>
+
+          <section class="view" id="view-conquistas" aria-labelledby="conquistas-title" hidden>
+            <div class="page-heading"><div><span class="eyebrow">CELEBRE CADA ETAPA</span><h1 id="conquistas-title">Suas <em>conquistas</em> 🏆</h1><p>Veja como sua floresta evoluiu desde a primeira folha.</p></div><div class="level-pill">🏅 <span id="achievement-total">0 de 6 conquistas</span></div></div>
+            <div class="stats-grid"><div class="stat-box"><span class="stat-icon">👆</span><p>Total de cliques</p><strong id="stat-clicks">0</strong></div><div class="stat-box"><span class="stat-icon">🍃</span><p>Folhas produzidas</p><strong id="stat-total">0</strong></div><div class="stat-box"><span class="stat-icon">🌳</span><p>Nível da floresta</p><strong id="stat-level">1</strong></div><div class="stat-box"><span class="stat-icon">⚡</span><p>Produção por segundo</p><strong id="stat-idle">0</strong></div></div>
+            <div class="achievements-heading"><div><h2>Medalhas da sua jornada</h2><p>Ao conquistar uma medalha, você ganha 2× folhas por 30 segundos.</p></div><span class="badge-count" id="badge-count">0 / 6</span></div>
+            <div class="achievements-grid" id="achievements-grid"></div>
+            <div class="testing-tools"><div><strong>🧪 Ferramentas do protótipo</strong><p>Use para testar as telas com seus colegas, sem afetar outros navegadores.</p></div><div class="testing-buttons"><button id="demo-button" class="secondary-button">Simular progresso</button><button id="reset-button" class="text-button">Recomeçar</button></div></div>
+          </section>
+        </main>
+        <div class="toast-stack" id="toast-stack" aria-live="polite" aria-atomic="false"></div>
+      </div>
+    </div>
+  </body>
+</html>
