@@ -1,83 +1,158 @@
-# EverTree · Edição Regeneração
+# 🌿 EverTree — Cada Gesto Regenera
 
-Jogo de reflorestamento para o projeto de IHC. HTML, CSS, SVG e JavaScript puro; não exige internet, cadastro, CDN ou instalação de dependências.
+> **Projeto final da disciplina de Interação Humano-Computador**
+> Jogo educativo de reflorestamento desenvolvido com HTML, CSS, SVG e JavaScript puro — sem frameworks, sem dependências externas, sem instalação.
 
-## Executar
+---
 
-- Abra `index.html` com dois cliques no Edge, Chrome ou Firefox.
-- Para uma origem local estável, com Node.js instalado: `npm start`, depois acesse `http://127.0.0.1:8765`.
-- `npm test`: executa os testes da simulação.
-- `npm run build`: gera a pasta `dist/`, compatível com `hosting.json`.
+## O Conceito
 
-O save é específico do navegador e da origem. Ao alternar entre arquivo local e servidor, use **Preferências & save → Baixar JSON / Copiar código → Importar**.
+**EverTree** é um jogo de incremento ambiental em que o jogador assume o papel de guardião de uma reserva ecológica degradada. A cada cuidado, folha colhida ou árvore plantada, o vale vai deixando de ser uma paisagem industrial e se tornando uma floresta viva.
 
-## O que foi implementado
+A experiência é construída em torno de uma ideia simples: **o cuidado tem impacto visível**. A paisagem muda em tempo real conforme a recuperação avança — fábricas somem, vegetação brota, fauna aparece.
 
-1. **Jornada ambiental:** cinco estágios levam o vale industrial a uma floresta recuperada. A paisagem pintada recebe vegetação, fauna e fábricas em camadas que respondem à recuperação real da reserva.
-2. **Animações:** copas ao vento, nuvens, fumaça, chuva, pássaros, borboleta, partículas de cuidado e feedback de eventos. Canvas e CSS locais, respeitando `prefers-reduced-motion` e a preferência interna.
-3. **Cultivo:** árvores plantadas em inventário, custos crescentes, consumo individual de água, nutrientes e luz. Ipê-amarelo, jacarandá-da-bahia e sequoia-costeira têm cards com informações e fontes. A sequoia exige uma expedição à Costa do Pacífico.
-4. **Estratégia:** quatro estações (3 minutos cada), previsão a cada minuto, com chuva, seca, tempestades, migração e grande reflorestamento. Há regadores acumulados, captação, compostagem, manejo de luz e viveiros. A eficiência cai quando os recursos não sustentam a demanda.
-5. **Emergências:** incêndios e pragas espalham oito alvos circulares pelo vale. Apague cada foco ou espante cada praga em até 30 segundos. Sucesso dá 35 folhas e um regador. Falha reduz a produção em 35% por 90 segundos; não apaga árvores. Um aviso no topo permite chegar ao evento a partir de qualquer tela.
-6. **Polinização:** duas receitas fictícias, 35% de chance; cada terceira tentativa global garante o híbrido quando a receita é compatível. Cada tentativa custa 180 folhas, 25 água e 25 nutrientes. Tentativas sem híbrido devolvem 15 nutrientes. As árvores parentais permanecem.
-7. **Prestígio:** doe uma floresta com 100% de recuperação e 5.000 folhas produzidas. A recompensa base é de `floor(sqrt(folhas / 5000) × 3)` sementes ancestrais. Invista em produção permanente (+50% por nível), reposição de recursos e novos biomas. A árvore de nove habilidades distribui efeitos entre Natureza, Tecnologia, Ecologia e Sabedoria. O painel de cada nó mostra custo, pré-requisitos e benefício do próximo nível.
-8. **Estatísticas:** produção por minuto, cliques por intervalo, tabela acessível, períodos selecionáveis e distribuição de árvores entre biomas atuais e florestas doadas. Gráficos Canvas locais com inspeção por cursor ou teclado; nenhuma biblioteca remota é necessária.
-9. **Som procedural:** Web Audio gera vento, água, pássaros e notas pentatônicas em camadas. Ativação explícita, volume suave e pausa quando a aba fica oculta.
-10. **Persistência:** JSON, código `ET2.` em Base64, validação de estrutura/limites, confirmação de substituição, cópia anterior ao importar e migração do save v1. Base64 é transporte, não criptografia.
-11. **Compras em lote:** os seletores de 1×, 10× e 50× na loja, na coleção e nas melhorias somam os preços progressivos individuais. O lote inteiro deve caber no saldo e no limite de 100 unidades ou níveis.
+---
 
-## Simulação online e offline
+## Como Executar
 
-`engine.js` contém funções independentes do DOM. A interface passa timestamps para `advance`. O tempo é acumulado em milissegundos inteiros; a simulação avança em passos de um segundo, seguindo a mesma sequência de estações, reposição, consumo, bônus e taxas em ambos os modos.
+```bash
+# Opção 1 — sem instalação
+# Abra index.html diretamente no Edge, Chrome ou Firefox
 
-- Limite de **7 dias de produção por ausência**, informado no retorno quando aplicado.
-- Os milissegundos restantes ficam no save; recarregar não duplica ganhos.
-- Emergências são geradas pelo tempo de jogo ativo. Emergências já iniciadas ficam pausadas durante a ausência.
-- O histórico mantém 240 amostras a cada 30 segundos (2 horas). Cliques de cada intervalo são armazenados separadamente para evitar distorções ao descartar amostras antigas.
-- A produção offline não usa simplesmente a taxa final multiplicada pelo tempo: reexecuta o consumo e o clima, incluindo períodos de escassez.
-- Os valores representam a economia do jogo, não modelos científicos de restauração, previsão do tempo ou estimativas de carbono real.
+# Opção 2 — servidor local estável (recomendado para save persistente)
+npm start
+# Acesse http://127.0.0.1:8765
+```
 
-## Arquitetura
+> [!NOTE]
+> O save fica no navegador e é vinculado à origem. Ao trocar entre `file://` e `localhost`, use **Preferências & save → Baixar JSON** para transferir o progresso.
 
-| Arquivo                                   | Responsabilidade                                                                                                                                      |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `engine.js`                               | Estado versionado, economia, clima, eventos, RNG, regras de prestígio, simulação offline e validação de saves. Exportação UMD para navegador e Node. |
-| `app.js`                                  | Navegação, renderização, controles acessíveis, gráficos, diálogos, importação/exportação e persistência.                                              |
-| `audio.js`                                | Síntese procedural com AudioContext e controle de camadas.                                                                                            |
-| `index.html`                              | Sete telas, quadro da reserva, controles e diálogos.                                                                                                  |
-| `styles.css`                              | Estilos compartilhados dos painéis e controles.                                                                                                       |
-| `scene.js`, `scene.css`                   | Paisagem em camadas, fauna, clima e animações ambientais.                                                                                             |
-| `game.css`, `upgrades.css`, `legacy.css`  | Layout da reserva, viveiro, controles de compra e árvore de habilidades.                                                                              |
-| `images/valley.jpg`, `valley-restored.jpg`| Paisagens do vale degradado e restaurado (plano de fundo).                                                                                            |
-| `images/*.png`                            | Seis ilustrações de espécies (pioneer, ipe, jacaranda, sequoia, aurora, lumina).                                                                      |
-| `tests/*.test.cjs`                        | Testes determinísticos com `node:test`, sem dependências.                                                                                             |
-| `scripts/`                                | Servidor local e cópia dos arquivos para distribuição.                                                                                                |
+```bash
+npm test      # Testes da simulação (sem dependências)
+npm run build # Gera public/ pronto para hospedagem estática
+```
 
-A versão original foi preservada em um ZIP de backup entregue junto ao projeto. Nenhuma publicação ou push remoto foi realizado.
+---
 
-## Roteiro de apresentação
+## Funcionalidades
 
-1. Abra **Reserva** e cuide da muda pelo mouse ou teclado.
-2. Em **Coleção**, plante mais árvores e consulte os cards ecológicos.
-3. Observe entrada e demanda dos três recursos. Faça uma melhoria para compensar o consumo.
-4. Em **Preferências & save**, abra a **demonstração temporária**. O save real é preservado; atualizar a página ou voltar ao save real encerra a demonstração.
-5. Teste seca e regador, incêndio e pragas pelos botões da faixa de demonstração.
-6. No laboratório, escolha ipê + jacarandá e realize a polinização. Continue até descobrir Aurora.
-7. No diário, escolha o período, passe o cursor no gráfico e use as setas do teclado. Os dados iniciais da demonstração são fictícios e identificados pela faixa da demonstração.
-8. Em **Legado**, adquira Raízes ancestrais → Ciclo da vida → Horizontes vivos. Escolha Costa do Pacífico e doe a floresta. Confira o reinício e o bônus permanente.
-9. Copie um código ou baixe o JSON. Importe a cópia e confira a confirmação. Um JSON inválido deve ser rejeitado sem alterar a partida.
-10. Volte ao save real antes de terminar. Feche e reabra para verificar o resumo offline.
+### 🌄 Jornada Ambiental
+O vale passa por **5 estágios** — de *Vale industrial* até *Paraíso natural*. A paisagem é pintada em Canvas com camadas que reagem à recuperação real: fábricas, brotos, pássaros, capivara e neblina aparecem ou somem conforme o progresso.
 
-## Fontes dos cards
+### 🌳 Cultivo Estratégico
+Plante **4 espécies reais** (Muda pioneira, Ipê-amarelo, Jacarandá-da-bahia, Sequoia-costeira) e **2 híbridos fictícios** (Aurora, Lúmina). Cada espécie consome água, nutrientes e luz individualmente — gerencie os recursos antes de expandir. Cards com fontes científicas acompanham cada descoberta.
 
-Consulta em 6 de novembro de 2026. As fontes são abertas pelo jogador em outra aba; a partida funciona sem acessá-las.
+### 🌦️ Clima Dinâmico
+**4 estações de 3 minutos**, com 6 tipos de tempo: sol, chuva, seca, tempestade, migração de aves e grande reflorestamento. Cada clima altera a reposição de recursos e a produção de folhas. Use o **regador** para proteger a floresta durante a seca.
 
-- [Ipê-amarelo — EcoCâmara](https://www2.camara.leg.br/a-camara/estruturaadm/gestao-na-camara-dos-deputados/responsabilidade-social-e-ambiental/ecocamara/recursos/bosque-dos-constituintes/flora-local/as-20-especies-originais/ipe-amarelo): polinização por abelhas, sementes dispersas pelo vento e uso na recuperação de áreas degradadas. O nome científico segue a nomenclatura apresentada pela fonte.
-- [Jacarandá-da-bahia — EcoCâmara](https://www2.camara.leg.br/a-camara/estruturaadm/gestao-na-camara-dos-deputados/responsabilidade-social-e-ambiental/ecocamara/recursos/bosque-dos-constituintes/flora-local/as-20-especies-originais/jacaranda-da-bahia): ocorrência e conservação.
-- [Coast Redwood — National Park Service](https://www.nps.gov/articles/000/coast-redwood.htm): distribuição na costa do Pacífico dos EUA e contribuição da neblina para o ecossistema.
+### 🔥 Emergências Ambientais
+**Incêndios e pragas** surgem durante a partida. 8 focos aparecem pelo vale; você tem 30 segundos para eliminá-los clicando. Resolver a emergência dá 35 folhas e +1 regador. Falhar reduz a produção por 90 segundos.
 
-Híbridos intergenéricos, multiplicadores, consumo, estações e restauração em minutos são mecânicas fictícias. Não se destinam a orientar plantios reais.
+### ⚗️ Laboratório de Polinização
+Combine duas espécies plantadas para tentar criar um híbrido fictício. Duas receitas ocultas, **35% de chance** por tentativa — mas toda 3ª tentativa global garante o híbrido se a receita for compatível.
 
-## Limites do protótipo
+### ✧ Prestígio e Legado
+Doe uma floresta recuperada (100% + 5.000 folhas) e ganhe **sementes ancestrais**. Reinvista em 9 habilidades permanentes distribuídas em quatro ramos: Natureza, Tecnologia, Ecologia e Sabedoria. Desbloqueie novos biomas — **Cerrado** e **Costa do Pacífico**.
 
-Save local sem conta ou sincronização entre aparelhos. Use uma aba por partida. Não há servidor de jogo nem proteção antitrapaça; um save editado pelo próprio jogador pode alterar a economia. A validação evita dados malformados, referências desconhecidas e valores fora dos limites, mas não autentica a autoria do progresso. As florestas doadas mantêm os 200 registros mais recentes.
+### 📊 Diário da Floresta
+Gráficos de produção por minuto e cliques por intervalo, com inspeção por cursor ou teclado. Tabela acessível com dados brutos. Distribuição de árvores entre biomas atuais e florestas doadas. Tudo em Canvas local, sem biblioteca externa.
+
+### 🔊 Paisagem Sonora
+Som gerado por **Web Audio API** em camadas: vento, água corrente, pássaros e notas pentatônicas suaves. Intensidade varia com a recuperação do vale. Ativação explícita; pausa automática quando a aba fica em segundo plano.
+
+### 💾 Save Portável
+Exporte como **JSON** ou copie um **código ET2** em Base64. Importe em qualquer navegador. Validação completa de estrutura e limites — um save adulterado é rejeitado sem apagar o progresso existente.
+
+---
+
+## Simulação Offline
+
+O jogo continua mesmo com a aba fechada. O motor (`engine.js`) é **independente do DOM** e replay o clima, consumo e estações tick a tick ao reabrir:
+
+| Detalhe | Valor |
+|---|---|
+| Limite de produção offline | 7 dias |
+| Precisão de tempo | Milissegundos; recarregar não duplica ganhos |
+| Emergências offline | Pausadas; não destroem a floresta silenciosamente |
+| Histórico de amostras | 240 pontos × 30 s = 2 horas de gráfico |
+
+---
+
+## Arquitetura Técnica
+
+```
+IHC/
+├── index.html          # 7 telas, reserva, controles e diálogos
+├── engine.js           # Motor: estado, economia, clima, RNG, prestígio, validação (UMD)
+├── app.js              # UI: navegação, render, gráficos, save, acessibilidade
+├── audio.js            # Síntese procedural com AudioContext
+├── scene.js            # Paisagem Canvas em camadas + animações
+├── styles.css          # Estilos base compartilhados
+├── game.css            # Layout da reserva e viveiro
+├── upgrades.css        # Controles de compra em lote
+├── legacy.css          # Árvore de habilidades e legado
+├── scene.css           # Fundo e transições da paisagem
+├── images/
+│   ├── valley.jpg              # Fundo — vale degradado
+│   ├── valley-restored.jpg     # Fundo — vale restaurado
+│   └── *.png                   # 6 ilustrações de espécies
+├── tests/              # Testes determinísticos (node:test, sem deps)
+└── scripts/            # Servidor local e build de distribuição
+```
+
+> [!IMPORTANT]
+> Zero dependências de produção. Nenhum CDN, nenhum framework, nenhum bundle. O jogo abre com dois cliques em qualquer máquina.
+
+---
+
+## Decisões de Design (IHC)
+
+| Princípio | Como foi aplicado |
+|---|---|
+| **Feedback imediato** | A paisagem muda ao plantar; partículas animam cada cuidado; toasts confirmam toda ação |
+| **Affordance visual** | Botões com ícone + rótulo; barra de progresso sempre visível; alerta de emergência no topo global |
+| **Acessibilidade** | Navegação completa por teclado; `aria-label` em todos os controles; gráfico inspecionável com setas; respeita `prefers-reduced-motion` |
+| **Prevenção de erros** | Confirmação antes de substituir save; validação de import rejeita sem alterar o estado atual |
+| **Transparência** | Cards com fontes reais; aviso explícito sobre mecânicas fictícias; fórmulas de prestígio expostas |
+| **Progressão legível** | Próxima descoberta sempre visível; custo do próximo lote calculado na UI; habilidades mostram pré-requisitos |
+
+---
+
+## Espécies e Fontes
+
+> Consulta em 6 de novembro de 2026. As fontes abrem em nova aba; o jogo funciona sem elas.
+
+- 🌼 **Ipê-amarelo** (*Tabebuia serratifolia*) — [EcoCâmara](https://www2.camara.leg.br/a-camara/estruturaadm/gestao-na-camara-dos-deputados/responsabilidade-social-e-ambiental/ecocamara/recursos/bosque-dos-constituintes/flora-local/as-20-especies-originais/ipe-amarelo): polinização por abelhas, sementes dispersas pelo vento, uso na recuperação de áreas degradadas.
+- 🌿 **Jacarandá-da-bahia** (*Dalbergia nigra*) — [EcoCâmara](https://www2.camara.leg.br/a-camara/estruturaadm/gestao-na-camara-dos-deputados/responsabilidade-social-e-ambiental/ecocamara/recursos/bosque-dos-constituintes/flora-local/as-20-especies-originais/jacaranda-da-bahia): espécie ameaçada da Mata Atlântica.
+- 🌲 **Sequoia-costeira** (*Sequoia sempervirens*) — [National Park Service](https://www.nps.gov/articles/000/coast-redwood.htm): neblina da costa do Pacífico e contribuição ao solo.
+- ✦ **Aurora** e **Lúmina** — híbridos fictícios criados no laboratório do jogo. Cruzamentos intergenéricos e multiplicadores de produção são mecânicas de jogo, sem correspondência botânica real.
+
+---
+
+## Roteiro de Demonstração
+
+> Para a apresentação, use o **modo demonstração** em Preferências & save → Abrir demonstração. O save real fica intacto.
+
+1. **Reserva** — cuide da muda (mouse ou teclado) e observe as partículas e o contador de folhas.
+2. **Coleção** — plante Ipê e Jacarandá; leia os cards ecológicos; observe os recursos caindo.
+3. **Melhorias** — compre Captação de chuva para equilibrar a água.
+4. **Demonstração** — ative seca → use o regador. Depois ative incêndio → clique nos focos para apagá-los.
+5. **Laboratório** — combine Ipê + Jacarandá até descobrir Aurora.
+6. **Diário** — passe o cursor nos gráficos; use as setas do teclado para inspecionar os pontos.
+7. **Legado** — compre Raízes ancestrais, Ciclo da vida, Horizontes vivos. Doe para a Costa do Pacífico.
+8. **Save** — baixe o JSON, importe de volta, confirme. Tente importar um arquivo inválido.
+9. Feche e reabra a aba para ver o **resumo de produção offline**.
+
+---
+
+## Limitações Conhecidas
+
+- Save local: sem conta, sem sincronização entre dispositivos.
+- Uma aba por partida (duas abas compartilham o mesmo `localStorage`).
+- Sem servidor de jogo ou autenticação de progresso — a validação bloqueia dados malformados, não autoria.
+- As florestas doadas mantêm os **200 registros mais recentes**.
+
+---
+
+*Projeto entregue para a disciplina de IHC — novembro de 2026. Código preservado em ZIP de backup junto à entrega. Nenhum push remoto foi realizado.*
 
