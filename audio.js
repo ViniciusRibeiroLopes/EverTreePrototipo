@@ -65,7 +65,7 @@ window.ForestAudio = class {
     this.level = recovery / 100;
     if (!this.ctx) return;
     this.water.gain.setTargetAtTime(
-      this.level * 0.6 + (weather === "chuva" ? 0.2 : 0),
+      this.level * 0.6 + (weather === "tempestade" ? 0.45 : weather === "chuva" ? 0.2 : 0),
       this.ctx.currentTime,
       2,
     );

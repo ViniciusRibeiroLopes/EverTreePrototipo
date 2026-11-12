@@ -119,6 +119,7 @@
     {
       id: "luvas",
       name: "Mãos que restauram",
+      purpose: "Colha mais folhas sempre que cuidar da árvore.",
       desc: "+2 folhas por clique.",
       cost: 30,
       icon: "✦",
@@ -126,6 +127,7 @@
     {
       id: "cisterna",
       name: "Captação de chuva",
+      purpose: "Armazene a chuva para abastecer as raízes.",
       desc: "+0,8 água/s e +50 de capacidade por nível.",
       cost: 65,
       icon: "◈",
@@ -133,6 +135,7 @@
     {
       id: "composto",
       name: "Compostagem",
+      purpose: "Transforme matéria orgânica em nutrientes para o solo.",
       desc: "+0,5 nutrientes/s e +50 de capacidade por nível.",
       cost: 65,
       icon: "♧",
@@ -140,6 +143,7 @@
     {
       id: "luz",
       name: "Manejo de clareiras",
+      purpose: "Abra espaço na copa para a entrada de luz.",
       desc: "+0,7 luz/s e +50 de capacidade por nível.",
       cost: 65,
       icon: "☼",
@@ -147,6 +151,7 @@
     {
       id: "viveiro",
       name: "Rede de viveiros",
+      purpose: "Cultive mudas que aumentam a produção de toda a floresta.",
       desc: "+25% de produção das árvores por nível.",
       cost: 150,
       icon: "⌂",
@@ -154,27 +159,49 @@
   ];
   const SKILLS = [
     {
-      id: "growth",
-      name: "Raízes ancestrais",
-      desc: "+50% permanente de produção por nível.",
-      base: 1,
-      max: 8,
+      id: "growth", branch: "natureza", name: "Raízes ancestrais", base: 1, max: 8,
+      desc: "As raízes das florestas antigas alimentam os novos brotos.",
+      benefit: "+50% de folhas das árvores e dos cliques por nível.",
     },
     {
-      id: "resilience",
-      name: "Ciclo da vida",
-      desc: "+25% de reposição de recursos por nível. Requer Raízes 1.",
-      base: 2,
-      max: 5,
-      requires: "growth",
+      id: "resilience", branch: "natureza", name: "Ciclo da vida", base: 2, max: 5,
+      requires: "growth", desc: "A matéria orgânica nutre o próximo ciclo da floresta.",
+      benefit: "+25% de reposição de água, nutrientes e luz por nível.",
     },
     {
-      id: "biomes",
-      name: "Horizontes vivos",
-      desc: "Libera Cerrado e Costa do Pacífico nas expedições. Requer Ciclo 1.",
-      base: 2,
-      max: 1,
-      requires: "resilience",
+      id: "biomes", branch: "natureza", name: "Horizontes vivos", base: 2, max: 1,
+      requires: "resilience", desc: "Leve sua experiência para paisagens com outros ritmos de crescimento.",
+      benefit: "Libera Cerrado e Costa do Pacífico como destinos de expedição.",
+    },
+    {
+      id: "harvest", branch: "tecnologia", name: "Coletores solares", base: 1, max: 4,
+      desc: "Pequenos coletores sustentam o viveiro durante a sua ausência.",
+      benefit: "+0,5 folha por segundo por nível, inclusive fora do jogo.",
+    },
+    {
+      id: "machinery", branch: "tecnologia", name: "Rede autônoma", base: 2, max: 3,
+      requires: "harvest", desc: "Conecte os coletores para coordenar as colheitas.",
+      benefit: "+100% da produção dos coletores solares por nível.",
+    },
+    {
+      id: "restoration", branch: "ecologia", name: "Solo regenerado", base: 1, max: 3,
+      desc: "O solo volta a reter água e acelera a recuperação do vale.",
+      benefit: "+20% ao índice de recuperação ambiental por nível, até 100%.",
+    },
+    {
+      id: "diversity", branch: "ecologia", name: "Corredor de fauna", base: 2, max: 3,
+      requires: "restoration", desc: "Os animais espalham sementes entre as copas de espécies diferentes.",
+      benefit: "+5% de produção das árvores por espécie plantada e por nível.",
+    },
+    {
+      id: "heritage", branch: "sabedoria", name: "Banco de sementes", base: 2, max: 3,
+      desc: "Reserve parte das sementes de cada floresta para as futuras gerações.",
+      benefit: "+1 semente ancestral por doação e por nível.",
+    },
+    {
+      id: "practice", branch: "sabedoria", name: "Saber de campo", base: 2, max: 4,
+      requires: "heritage", desc: "Os registros das expedições ensinam a colher sem danificar os brotos.",
+      benefit: "+25% de folhas por clique por nível.",
     },
   ];
   const BADGES = [
@@ -217,9 +244,12 @@
   ];
   const SEASONS = ["Primavera", "Verão", "Outono", "Inverno"];
   const WEATHER = {
-    sol: { name: "Céu aberto", icon: "☀", income: [1, 1, 1.2], yield: 1 },
-    chuva: { name: "Chuva", icon: "☂", income: [2.2, 1.1, 0.6], yield: 1.25 },
-    seca: { name: "Seca", icon: "◌", income: [0.2, 0.75, 1.5], yield: 0.6 },
+    sol: { name: "Céu aberto", icon: "☀", income: [1, 1, 1.2], yield: 1, effect: "A luz solar se repõe 20% mais rápido." },
+    chuva: { name: "Chuva", icon: "☂", income: [2.2, 1.1, 0.6], yield: 1.25, effect: "Reposição de água ×2,2, nutrientes ×1,1 e luz ×0,6. Produção de folhas +25%." },
+    seca: { name: "Seca", icon: "◌", income: [0.2, 0.75, 1.5], yield: 0.6, effect: "Reposição de água ×0,2, nutrientes ×0,75 e luz ×1,5. Produção −40%. O regador protege a produção por 60 segundos." },
+    tempestade: { name: "Tempestade", icon: "ϟ", income: [2.8, 1, 0.45], yield: 0.9, effect: "O temporal multiplica a reposição de água por 2,8. A luz cai a 45% e a produção a 90%." },
+    migracao: { name: "Migração de aves", icon: "⌁", income: [1, 1.5, 1], yield: 1.15, effect: "A revoada dispersa sementes. Reposição de nutrientes +50% e produção de folhas +15%." },
+    mutirao: { name: "Grande reflorestamento", icon: "❧", income: [1, 1, 1], yield: 1.55, effect: "A regeneração em conjunto aumenta a produção de folhas em 55% durante este minuto." },
   };
   const keys = SPECIES.map((x) => x.id);
   const emptyCounts = (ids) => Object.fromEntries(ids.map((id) => [id, 0]));
@@ -255,7 +285,7 @@
         seeds: 0,
         totalSeeds: 0,
         donations: 0,
-        skills: { growth: 0, resilience: 0, biomes: 0 },
+        skills: emptyCounts(SKILLS.map((k) => k.id)),
         archives: [],
       },
       history: [],
@@ -270,12 +300,16 @@
     const season = Math.floor(s.age / 180) % 4,
       slot = Math.floor(s.age / 60),
       n = (Math.imul(slot + 37, 2654435761) >>> 0) % 100;
-    const weather =
+    let weather =
       n < (season === 1 ? 45 : 20)
         ? "seca"
         : n < (season === 3 ? 75 : 60)
           ? "chuva"
           : "sol";
+    // Ecological events share the climate clock, including during offline replay.
+    if (slot % 8 === 7 && recovery(s) >= 40) weather = "mutirao";
+    else if (slot % 6 === 2 && recovery(s) >= 18) weather = "migracao";
+    else if (slot > 0 && slot % 3 === 0 && weather === "chuva") weather = "tempestade";
     return {
       season: SEASONS[season],
       weather,
@@ -284,7 +318,8 @@
     };
   }
   function recovery(s) {
-    return clamp(s.clean * 0.45 + s.lifetime / 90, 0, 100);
+    const restored = s.clean * 0.45 + s.lifetime / 90;
+    return clamp(restored * (1 + 0.2 * s.meta.skills.restoration), 0, 100);
   }
   function capacities(s) {
     return {
@@ -302,10 +337,11 @@
       b.income[1] + s.upgrades.composto * 0.5,
       b.income[2] + s.upgrades.luz * 0.7,
     ].map((v, i) => v * c.income[i] * r);
-    let base = 0;
+    let base = 0, plantedSpecies = 0;
     const demand = [0, 0, 0];
     SPECIES.forEach((t) => {
       base += t.rate * s.trees[t.id];
+      if (s.trees[t.id] > 0) plantedSpecies++;
       t.needs.forEach((n, i) => (demand[i] += n * s.trees[t.id]));
     });
     const names = ["water", "soil", "sun"];
@@ -321,15 +357,17 @@
       base *
       (1 + s.upgrades.viveiro * 0.25) *
       (1 + s.meta.skills.growth * 0.5) *
+      (1 + 0.05 * plantedSpecies * s.meta.skills.diversity) *
       b.bonus *
       weatherYield *
       (s.damageUntil > s.age ? 0.65 : 1);
+    const automated = 0.5 * s.meta.skills.harvest * (1 + s.meta.skills.machinery);
     return {
       income,
       demand,
       efficiency,
-      rate: potential * efficiency,
-      potential,
+      rate: potential * efficiency + automated,
+      potential: potential + automated,
     };
   }
   function gain(s, n) {
@@ -337,7 +375,8 @@
     s.lifetime += n;
   }
   function clickRate(s) {
-    return (2 + s.upgrades.luvas * 2) * (1 + s.meta.skills.growth * 0.5);
+    return (2 + s.upgrades.luvas * 2) * (1 + s.meta.skills.growth * 0.5) *
+      (1 + s.meta.skills.practice * 0.25);
   }
   function unlock(s) {
     const added = [];
@@ -419,13 +458,22 @@
     for (let i = 0; i < seconds; i++) step(s, online);
     return { seconds, gained: s.leaves - before, skipped, unlocks: unlock(s) };
   }
-  function cost(s, type, id) {
-    if (type === "tree") {
-      const t = SPECIES.find((t) => t.id === id);
-      return t ? Math.ceil(t.cost * 1.24 ** s.trees[id]) : Infinity;
-    }
-    const u = UPGRADES.find((u) => u.id === id);
-    return u ? Math.ceil(u.cost * 1.65 ** s.upgrades[id]) : Infinity;
+  const PURCHASE_QUANTITIES = [1, 10, 50];
+  const PURCHASE_LIMIT = 100;
+
+  function cost(s, type, id, quantity = 1) {
+    if (!PURCHASE_QUANTITIES.includes(quantity)) return Infinity;
+    const trees = type === "tree";
+    const catalog = trees ? SPECIES : type === "upgrade" ? UPGRADES : [];
+    const item = catalog.find((entry) => entry.id === id);
+    if (!item) return Infinity;
+    const level = (trees ? s.trees : s.upgrades)[id];
+    if (level + quantity > PURCHASE_LIMIT) return Infinity;
+    const growth = trees ? 1.24 : 1.65;
+    let total = 0;
+    for (let index = level; index < level + quantity; index++)
+      total += Math.ceil(item.cost * growth ** index);
+    return total;
   }
   function eligible(s, t) {
     return (
@@ -436,32 +484,34 @@
           : s.biome !== "temperada"))
     );
   }
-  function buy(s, type, id) {
-    const item = (type === "tree" ? SPECIES : UPGRADES).find(
-      (x) => x.id === id,
-    );
-    if (!item) return { ok: false, message: "Item desconhecido." };
-    if (type === "tree" && !eligible(s, item))
-      return {
-        ok: false,
-        message: "Descubra a espécie e escolha seu bioma de origem.",
-      };
-    const count = type === "tree" ? s.trees[id] : s.upgrades[id];
-    if (count >= 100)
-      return { ok: false, message: "Limite de 100 unidades atingido." };
-    const price = cost(s, type, id);
-    if (s.leaves < price)
-      return { ok: false, message: "Você precisa de mais folhas." };
-    s.leaves -= price;
-    if (type === "tree") {
-      s.trees[id]++;
-      s.activeSpecies = id;
-    } else s.upgrades[id]++;
+  function quotePurchase(s, type, id, quantity = 1) {
+    const tree = type === "tree";
+    const catalog = tree ? SPECIES : type === "upgrade" ? UPGRADES : [];
+    const item = catalog.find((entry) => entry.id === id);
+    const price = cost(s, type, id, quantity);
+    let message = "";
+    if (!item) message = "Item desconhecido.";
+    else if (!PURCHASE_QUANTITIES.includes(quantity)) message = "Quantidade inválida.";
+    else if (tree && !eligible(s, item)) message = "Descubra a espécie e escolha seu bioma de origem.";
+    else if (!Number.isFinite(price)) message = "O lote excede o limite de 100.";
+    else if (s.leaves < price) message = "Você precisa de mais folhas.";
+    return { ok: !message, message, price, item };
+  }
+
+  function buy(s, type, id, quantity = 1) {
+    const quote = quotePurchase(s, type, id, quantity);
+    if (!quote.ok) return quote;
+    s.leaves -= quote.price;
+    const tree = type === "tree";
+    const inventory = tree ? s.trees : s.upgrades;
+    inventory[id] += quantity;
+    if (tree) s.activeSpecies = id;
     unlock(s);
     return {
       ok: true,
-      message:
-        type === "tree" ? `${item.name} plantado!` : `${item.name} melhorado!`,
+      message: tree
+        ? `${quote.item.name} ×${quantity} · plantio concluído!`
+        : `${quote.item.name} · nível ${inventory[id]}!`,
     };
   }
   function water(s) {
@@ -481,9 +531,22 @@
     s.resources[key] = Math.min(cap[key], s.resources[key] + 12);
     s.clean = Math.min(100, s.clean + 0.25);
   }
-  function rescue(s) {
-    if (!s.event) return { ok: false };
-    s.event.hits++;
+  function clearedTargets(event) {
+    // Older expeditions saved the number of completed actions only.
+    return event.cleared ?? Array.from({ length: event.hits }, (_, i) => i);
+  }
+  function rescue(s, targetId) {
+    const event = s.event;
+    if (!event) return { ok: false };
+    const cleared = clearedTargets(event);
+    if (targetId === undefined) {
+      targetId = 0;
+      while (cleared.includes(targetId)) targetId++;
+    }
+    if (!Number.isInteger(targetId) || targetId < 0 || targetId >= event.target || cleared.includes(targetId))
+      return { ok: false };
+    event.cleared = [...cleared, targetId];
+    event.hits = event.cleared.length;
     if (s.event.hits >= s.event.target) {
       s.event = null;
       s.rescues++;
@@ -541,7 +604,7 @@
     };
   }
   function prestigeReward(s) {
-    return Math.floor(Math.sqrt(s.lifetime / 5000) * 3);
+    return Math.floor(Math.sqrt(s.lifetime / 5000) * 3) + s.meta.skills.heritage;
   }
   function canPrestige(s) {
     return s.lifetime >= 5000 && recovery(s) >= 100;
@@ -690,7 +753,8 @@
     SKILLS.forEach(
       (k) =>
         (out.meta.skills[k.id] = number(
-          input.meta?.skills?.[k.id],
+          input.meta?.skills?.[k.id] === undefined && !["growth", "resilience", "biomes"].includes(k.id)
+            ? 0 : input.meta?.skills?.[k.id],
           k.id,
           k.max,
           true,
@@ -698,8 +762,7 @@
     );
     if (
       out.meta.seeds > out.meta.totalSeeds ||
-      (out.meta.skills.resilience && !out.meta.skills.growth) ||
-      (out.meta.skills.biomes && !out.meta.skills.resilience) ||
+      SKILLS.some((k) => out.meta.skills[k.id] > 0 && k.requires && !out.meta.skills[k.requires]) ||
       (out.biome !== "atlantica" && !out.meta.skills.biomes)
     )
       throw new Error("Progressão ancestral inconsistente.");
@@ -738,6 +801,13 @@
         hits: number(e.hits, "ações", 7, true),
         left: number(e.left, "tempo", 30, true),
       };
+      if (e.cleared !== undefined) {
+        if (!Array.isArray(e.cleared) || e.cleared.length !== out.event.hits ||
+            new Set(e.cleared).size !== e.cleared.length ||
+            e.cleared.some(id => !Number.isInteger(id) || id < 0 || id >= out.event.target))
+          throw new Error("Alvos do evento inválidos.");
+        out.event.cleared = [...e.cleared];
+      }
     }
     out.settings = {
       sound: input.settings?.sound === true,
@@ -814,11 +884,14 @@
     collect,
     clickRate,
     cost,
+    quotePurchase,
+    PURCHASE_QUANTITIES,
     buy,
     eligible,
     water,
     tend,
     rescue,
+    clearedTargets,
     cross,
     prestigeReward,
     canPrestige,

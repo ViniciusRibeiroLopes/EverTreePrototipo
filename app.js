@@ -14,11 +14,13 @@
     conquistas: "Diário da floresta",
     configuracoes: "Preferências & save",
   };
+  const numberFormats = [0, 1, 2, 3].map(maximumFractionDigits => new Intl.NumberFormat("pt-BR", { maximumFractionDigits }));
   const fmt = (v, d = 0) =>
-    new Intl.NumberFormat("pt-BR", { maximumFractionDigits: d }).format(v);
+    numberFormats[d].format(v);
   const duration = (n) =>
     n >= 3600 ? `${fmt(n / 3600, 1)} h` : `${fmt(n / 60, 1)} min`;
   const audio = new window.ForestAudio();
+  const valley = new window.ForestScene($("scene-art"));
   let state = E.fresh(),
     demo = false,
     realState = null,
@@ -27,7 +29,7 @@
     dirty = false,
     loadNote = "",
     cardQueue = [],
-    seenEvent = false,
+    displayedEvent = null,
     lastChartIndex = { production: 0, click: 0 };
   let offline = null;
   try {
@@ -106,15 +108,8 @@
       if (next && !next.disabled) next.focus({ preventScroll: true });
     }
   }
-  function treeSVG(id, small = false) {
-    const t = E.SPECIES.find((t) => t.id === id) || E.SPECIES[0],
-      color = t.color;
-    const tall = id === "sequoia" || id === "lumina";
-    let canopy = tall
-      ? `<path d="M150 12 75 135h26l-49 78h35l-35 59q96 30 196 0l-35-59h35l-49-78h26Z" fill="${color}"/><path d="m150 24-51 108h25l-44 75h35l-26 61 61 13Z" fill="#ffffff" opacity=".14"/><path d="m161 88 26 48m-20 25 28 48m-23 22 25 34" stroke="#ffffff" stroke-width="5" opacity=".15" stroke-linecap="round"/>`
-      : `<path d="M73 209Q30 182 59 137Q43 96 91 83Q104 33 152 54Q206 21 228 79Q279 91 251 140Q284 182 242 211Q203 242 157 214Q110 244 73 209Z" fill="${color}"/><path d="M61 133Q57 101 98 91Q108 49 153 67Q192 47 214 79Q167 76 152 115Q107 100 95 147Z" fill="#ffffff" opacity=".16"/><path d="M77 189q44 16 69-17 43 34 93-4" stroke="#194b32" stroke-width="20" opacity=".10" fill="none" stroke-linecap="round"/><g fill="#f8f1b6" opacity="${id === "ipe" ? 0.75 : 0.3}"><circle cx="99" cy="107" r="5"/><circle cx="157" cy="82" r="5"/><circle cx="204" cy="107" r="6"/><circle cx="80" cy="159" r="4"/><circle cx="183" cy="166" r="5"/><circle cx="226" cy="180" r="4"/><circle cx="120" cy="193" r="5"/></g>`;
-    const scale = id === "muda" ? "translate(46 104) scale(.68)" : "";
-    return `<svg viewBox="0 0 300 350" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><ellipse cx="150" cy="326" rx="${small ? 60 : 70}" ry="9" fill="#315a3b" opacity=".12"/><g transform="${scale}"><path d="M135 326q14-79 5-146l-30-31 8-9 31 30 27-39 11 7-25 44q-2 77 10 144Z" fill="#8b6b45"/><path d="M151 199q-3 75 4 122" stroke="#c0a073" stroke-width="5" opacity=".5"/><g class="tree-crown">${canopy}</g></g><path d="m103 325-7-10m12 10 3-14m80 14 6-13m-1 14 10-6" stroke="#718d50" stroke-width="3" stroke-linecap="round"/></svg>`;
+  function treeArt(id) {
+    return `<img class="species-sprite" src="images/${id === "muda" ? "pioneer" : id}.png" alt="" draggable="false">`;
   }
   function setSelect(id, items) {
     const el = $(id),
@@ -145,7 +140,12 @@
     const panel=$('game-panel');
     if(view==='jardim') { if(panel.open)panel.close(); }
     else if(!panel.open)panel.showModal();
-    if(view!=='jardim')$('game-panel').querySelector('.panel-content').scrollTop=0;
+    const notices = $("toast-stack");
+    if (view === "jardim") document.body.append(notices);
+    else {
+      panel.append(notices);
+      panel.querySelector(".panel-content").scrollTop = 0;
+    }
     render();
     if(focus && view==='jardim')$('tree-button').focus({preventScroll:true});
   }
@@ -182,66 +182,148 @@
         (state.resources[id] / cap[id]) * 100 + "%";
     });
   }
+  function renderEmergency() {
+    const event = state.event;
+    const box = $("event-box");
+    const field = $("rescue-field");
+    box.hidden = !event;
+    $("event-alert").hidden = !event;
+    if (!event) {
+      if (displayedEvent) field.replaceChildren();
+      displayedEvent = null;
+      return;
+    }
+    const fire = event.type === "fire";
+    if (displayedEvent !== event) {
+      displayedEvent = event;
+      box.dataset.kind = event.type;
+      text("event-copy", fire ? "Apague os focos" : "Espante as pragas");
+      const buttons = Array.from({ length: event.target }, (_, i) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "rescue-target";
+        button.dataset.target = i;
+        button.style.gridArea = (1 + Math.floor(i / 4)) + " / " + (1 + i % 4);
+        button.setAttribute("aria-label", (fire ? "Apagar foco" : "Espantar praga") + " " + (i + 1));
+        const icon = document.createElement("span");
+        icon.ariaHidden = "true";
+        icon.textContent = fire ? "🔥" : "🐛";
+        button.append(icon);
+        return button;
+      });
+      field.replaceChildren(...buttons);
+      toast(fire ? "Incêndio! Apague os focos no vale." : "Pragas na floresta! Toque nos insetos.");
+    }
+    const cleared = E.clearedTargets(event);
+    for (const button of field.children) button.hidden = cleared.includes(Number(button.dataset.target));
+    text("rescue-count", event.hits + " / " + event.target);
+    text("rescue-time", event.left + " s");
+    text("event-alert", "⚠ " + event.left + " s");
+  }
+
   function renderScene() {
     const r=E.recovery(state), c=E.climate(state), scene=$('scene');
     const bio=E.BIOMES.find(b=>b.id===state.biome),sp=E.SPECIES.find(t=>t.id===state.activeSpecies);
-    scene.style.setProperty('--sky-top',`hsl(${170+r*.23} ${8+r*.28}% ${60+r*.19}%)`);
-    scene.style.setProperty('--sky-bottom',`hsl(${58+r*.3} ${17+r*.21}% 79%)`);
-    scene.style.setProperty('--far',`hsl(${95+r*.24} ${10+r*.13}% ${48+r*.17}%)`);
-    scene.style.setProperty('--middle',`hsl(${85+r*.22} ${12+r*.15}% ${40+r*.21}%)`);
-    scene.style.setProperty('--near',`hsl(${42+r*.54} ${19+r*.12}% ${38+r*.18}%)`);
-    scene.style.setProperty('--life',Math.max(0,(r-45)/55));scene.style.setProperty('--debris',Math.max(0,1-r/55));scene.style.setProperty('--river',Math.min(1,Math.max(0,(r-25)/40)));scene.dataset.weather=c.weather;
+    const stage = valley.update(state, r, c);
     document.body.style.setProperty('--forest-life',r/100);
+    text('season', c.season);
+    $('weather').setAttribute('aria-label', `Ver clima. ${c.name}, ${c.remaining} segundos restantes`);
     text('scene-biome',bio.name);text('weather',`${c.icon} ${c.name}`);
     $('weather').title=`${c.season} · muda em ${c.remaining}s. Clique para ver os efeitos.`;
     text('scene-species',sp.name);
-    if($('tree-art').dataset.tree!==sp.id){$('tree-art').innerHTML=treeSVG(sp.id);$('tree-art').dataset.tree=sp.id;}
-    const treeKey=JSON.stringify(state.trees);
-    if($('forest-decoration').dataset.key!==treeKey){
-      const planted=E.SPECIES.flatMap(t=>Array.from({length:Math.min(3,state.trees[t.id])},()=>t.id)).slice(0,14);
-      const spots=[[340,426,.7],[160,419,.55],[730,435,.7],[525,377,.45],[85,360,.4],[810,352,.4],[250,347,.4],[650,350,.4],[425,350,.38],[45,460,.65],[860,475,.7],[575,450,.65],[125,490,.5],[360,505,.6]];
-      $('forest-decoration').innerHTML=planted.map((id,i)=>{const [x,y,k]=spots[i];return `<g transform="translate(${x-150*k} ${y-326*k}) scale(${k})">${treeSVG(id).replace(/^<svg[^>]*>/,'').replace(/<\/svg>$/,'')}</g>`;}).join('');
-      $('forest-decoration').dataset.key=treeKey;
-    }
-    text('world-caption',r<20?'Uma semente. Um recomeço.':r<50?'As raízes estão despertando.':r<85?'A vida está voltando.':'O mundo ficou um pouco mais verde.');
+    if($('tree-art').dataset.tree!==sp.id){$('tree-art').innerHTML=treeArt(sp.id);$('tree-art').dataset.tree=sp.id;}
+    text("world-caption", stage);
     text('recovery-percent',fmt(r)+'%');$('recovery-bar').style.width=r+'%';
     const locked=E.SPECIES.find(t=>!t.hybrid&&!state.discovered.includes(t.id));
     text('next-name',locked?locked.name:E.canPrestige(state)?'Uma nova expedição':'Floresta recuperada');
     text('next-progress-label',locked?`${fmt(state.lifetime)} / ${fmt(locked.threshold)}`:fmt(r)+'%');
     $('next-progress').style.width=Math.min(100,locked?state.lifetime/locked.threshold*100:r)+'%';
     $('next-unlock').dataset.nav=locked?'floresta':'global';
-    text('water-button',`◈ ${state.cans}`);$('water-button').disabled=state.cans<1;
+    text('water-button',`Regar · ${state.cans}`);$('water-button').disabled=state.cans<1;
     $('water-button').setAttribute('aria-label',`Usar regador. ${state.cans} disponíveis.`);
     $('water-button').classList.toggle('needed',c.weather==='seca'&&state.wateredUntil<=state.age);
     const b=E.budget(state), cap=E.capacities(state);
-    if(!$('quick-resources').children.length)$('quick-resources').innerHTML=[['water','◈','Água'],['soil','♧','Solo'],['sun','☼','Luz']].map(([id,icon,label])=>`<button class="resource-orb ${id}" data-action="tend" data-id="${id}"><span>${icon}</span><small>${label}</small><i><em></em></i></button>`).join('');
-    [...$('quick-resources').children].forEach((button,i)=>{const key=['water','soil','sun'][i],level=state.resources[key]/cap[key];button.querySelector('em').style.width=level*100+'%';button.classList.toggle('low',level<.2);const label=`${['Água','Nutrientes','Luz'][i]}: ${fmt(state.resources[key])}/${cap[key]}. Entrada +${fmt(b.income[i],1)}/s; consumo ${fmt(b.demand[i],1)}/s. Clique: +12.`;button.title=label;button.setAttribute('aria-label',label);});
+    if(!$('quick-resources').children.length)$('quick-resources').innerHTML=[['water','◈','Água'],['soil','♧','Solo'],['sun','☼','Luz']].map(([id,icon,label])=>`<button class="resource-orb ${id}" data-action="tend" data-id="${id}"><span>${icon}</span><small>${label}</small><strong></strong><i><em></em></i></button>`).join('');
+    [...$('quick-resources').children].forEach((button,i)=>{const key=['water','soil','sun'][i],level=state.resources[key]/cap[key];button.querySelector('strong').textContent=fmt(state.resources[key]);button.querySelector('em').style.width=level*100+'%';button.classList.toggle('low',level<.2);const label=`${['Água','Nutrientes','Luz'][i]}: ${fmt(state.resources[key])}/${cap[key]}. Entrada +${fmt(b.income[i],1)}/s; consumo ${fmt(b.demand[i],1)}/s. Clique: +12.`;button.title=label;button.setAttribute('aria-label',label);});
     const shortage=b.efficiency<.99, damage=state.damageUntil>state.age;
     $('care-warning').hidden=!shortage&&!damage;
     text('care-warning',damage?`♧ Recuperando · ${state.damageUntil-state.age}s`:'⚠ Recursos baixos · cuidar');
-    $('event-box').hidden=!state.event;$('event-alert').hidden=!state.event;
-    if(state.event){const e=state.event,fire=e.type==='fire';text('event-alert',`⚠ ${e.left}s`);$('event-box').className='event-box '+(fire?'fire':'');text('event-copy',`${fire?'🔥 Incêndio!':'🐛 Pragas!'} · ${e.left}s`);text('event-action',`${fire?'Apagar':'Espantar'} · ${e.hits}/${e.target}`);$('event-action').setAttribute('aria-label',fire?'Apagar foco de incêndio':'Espantar pragas');$('event-action').title='Complete 8 ações. Falha: produção −35% por 90s.';$('event-progress').style.width=e.hits/e.target*100+'%';if(!seenEvent){toast(fire?'🔥 Proteja sua floresta!':'🐛 Pragas na floresta!');seenEvent=true;}}else seenEvent=false;
+    renderEmergency();
     audio.update(r,c.weather);
     renderShop();renderGrove();
   }
   let shopTab='trees';
-  const shortNames={muda:'Muda pioneira',ipe:'Ipê-amarelo',jacaranda:'Jacarandá',sequoia:'Sequoia',aurora:'Aurora',lumina:'Lúmina',luvas:'Luvas de cultivo',cisterna:'Cisterna',composto:'Composteira',luz:'Clareira',viveiro:'Viveiro'};
-  function renderShop(){
-    const items=shopTab==='trees'?E.SPECIES:E.UPGRADES;
-    const next=E.SPECIES.find(t=>!t.hybrid&&!state.discovered.includes(t.id));
-    const visible=items.filter(t=>shopTab!=='trees'||state.discovered.includes(t.id)||t.id===next?.id);
-    const signature=JSON.stringify([shopTab,visible.map(t=>t.id),state.discovered,state.biome]);
-    if($('shop-items').dataset.signature!==signature){
-      html('shop-items',visible.map(t=>{const locked=shopTab==='trees'&&!state.discovered.includes(t.id);return `<div class="shop-row ${locked?'locked':''}"><button class="shop-buy" data-shop-buy="${shopTab==='trees'?'tree':'upgrade'}" data-id="${t.id}"><span class="shop-art">${locked?'<span class="unknown-tree">?</span>':shopTab==='trees'?treeSVG(t.id,true):`<span class="upgrade-glyph">${t.icon}</span>`}</span><span class="shop-copy"><strong>${locked?'???':shortNames[t.id]}</strong><small class="shop-price"></small></span><b class="shop-owned"></b></button><button class="shop-info" data-action="${shopTab==='trees'?'fact':'upgrade-info'}" data-id="${t.id}" aria-label="Detalhes: ${t.name}">i</button></div>`;}).join(''));
-      $('shop-items').dataset.signature=signature;
+  const shortNames={muda:'Muda pioneira',ipe:'Ipê-amarelo',jacaranda:'Jacarandá',sequoia:'Sequoia',aurora:'Aurora',lumina:'Lúmina'};
+  let purchaseQuantity = 1;
+  const quantityControls = document.querySelectorAll(".batch-tools");
+  quantityControls.forEach((group) => {
+    group.innerHTML = '<span>Quantidade</span><div>' + E.PURCHASE_QUANTITIES.map((n) =>
+      `<button type="button" data-quantity="${n}" aria-pressed="${n === purchaseQuantity}">${n}×</button>`
+    ).join("") + '</div>';
+  });
+
+  function purchaseLabel(quote, count) {
+    if (count >= 100) return "Limite atingido";
+    if (!Number.isFinite(quote.price)) return "Lote excede o limite";
+    return `${fmt(quote.price)} folhas`;
+  }
+
+  const toolDrawings = {
+    luvas: '<path d="M6 12V7a1.5 1.5 0 0 1 3 0v4-6a1.5 1.5 0 0 1 3 0v6-5a1.5 1.5 0 0 1 3 0v6-3a1.5 1.5 0 0 1 3 0v5l1-2a1.5 1.5 0 0 1 2.7 1.3l-3.3 6.3a4 4 0 0 1-3.5 2H10a4 4 0 0 1-3.7-2.5l-2.4-5a1.5 1.5 0 0 1 2.5-1.5L8 15"/>',
+    cisterna: '<path d="M4 10h13v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Zm13 2h4v3M8 6l2-3m4 3 2-3M4 14c4-2 8 2 13 0"/>',
+    composto: '<path d="m3 14 9 4 9-4m-18 4 9 4 9-4M7 10c1-4 4-6 10-7 0 6-3 10-8 10M6 14l7-7"/>',
+    luz: '<circle cx="14" cy="8" r="3"/><path d="M14 2V1m6 7h2m-4 5 2 2M8 4 6 3m4 10-5 6m9-5-4 7M2 21h5"/>',
+    viveiro: '<path d="m2 10 10-7 10 7M4 10v11h16V10M12 21v-8m0 4c0-3-2-5-5-5 0 3 2 5 5 5Zm0-3c0-3 2-5 5-5 0 3-2 5-5 5Z"/>',
+  };
+
+  function upgradeIcon(id) {
+    return `<svg class="tool-drawing" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">${toolDrawings[id]}</svg>`;
+  }
+
+  function upgradeBenefit(id) {
+    const upgrades = { ...state.upgrades, [id]: state.upgrades[id] + purchaseQuantity };
+    if (upgrades[id] > 100) return "O limite é de 100 níveis.";
+    const preview = { ...state, upgrades };
+    if (id === "luvas")
+      return `+${fmt(E.clickRate(preview) - E.clickRate(state), 2)} folhas por clique`;
+    const before = E.budget(state), after = E.budget(preview);
+    if (id === "viveiro")
+      return `+${fmt(after.potential - before.potential, 2)} folhas/s de potencial com as árvores atuais`;
+    const resources = { cisterna: ["water", "água", 0], composto: ["soil", "nutrientes", 1], luz: ["sun", "luz", 2] };
+    const [key, name, index] = resources[id];
+    const capacity = E.capacities(preview)[key] - E.capacities(state)[key];
+    return `+${fmt(after.income[index] - before.income[index], 3)} ${name}/s · +${fmt(capacity)} de reserva`;
+  }
+
+  function renderShop() {
+    const tree = shopTab === "trees";
+    const visible = tree ? E.SPECIES.filter((item) => !item.hybrid || state.discovered.includes(item.id)) : E.UPGRADES;
+    const type = tree ? "tree" : "upgrade";
+    const signature = JSON.stringify([shopTab, visible.map((item) => item.id), state.discovered]);
+    if ($("shop-items").dataset.signature !== signature) {
+      html("shop-items", visible.map((item) => {
+        const locked = tree && !state.discovered.includes(item.id);
+        const art = tree ? treeArt(item.id) : `<span class="upgrade-glyph">${upgradeIcon(item.id)}</span>`;
+        return `<div class="shop-row ${locked ? "locked" : ""}"><button class="shop-buy" data-shop-buy="${type}" data-id="${item.id}"><span class="shop-art" aria-hidden="true">${art}</span><span class="shop-copy"><strong>${item.name}</strong><small class="shop-price"></small></span></button><span class="shop-owned"></span><button class="shop-info" data-action="${tree ? "fact" : "upgrade-info"}" data-id="${item.id}" aria-label="Detalhes de ${item.name}">i</button><span class="shop-effect"></span><small class="shop-shortfall"></small></div>`;
+      }).join(""));
+      $("shop-items").dataset.signature = signature;
     }
-    [...$('shop-items').querySelectorAll('.shop-row')].forEach((row,i)=>{const item=visible[i],tree=shopTab==='trees',locked=tree&&!state.discovered.includes(item.id),allowed=!tree||E.eligible(state,item),price=E.cost(state,tree?'tree':'upgrade',item.id),count=(tree?state.trees:state.upgrades)[item.id],button=row.querySelector('.shop-buy');
-      row.querySelector('.shop-price').textContent=locked?`🔒 ${fmt(item.threshold)} folhas totais`:!allowed?'Outro bioma':`❧ ${fmt(price)}`;
-      row.querySelector('.shop-owned').textContent=locked?'':count;
-      button.disabled=locked||!allowed||state.leaves<price||count>=100;
-      button.setAttribute('aria-label',locked?`Descobrir ${item.name} em ${item.threshold} folhas`:`Comprar ${item.name} por ${price} folhas. ${count} em uso.`);
-      button.title=locked?`Produza ${item.threshold} folhas para descobrir.`:tree?`+${fmt(item.rate,1)} folhas/s de base por árvore. Clique em i para saber mais.`:item.desc;
-      row.classList.toggle('affordable',!button.disabled);
+    $("shop-items").querySelectorAll(".shop-row").forEach((row, i) => {
+      const item = visible[i];
+      const count = (tree ? state.trees : state.upgrades)[item.id];
+      const locked = tree && !state.discovered.includes(item.id);
+      const quote = E.quotePurchase(state, type, item.id, purchaseQuantity);
+      const button = row.querySelector(".shop-buy");
+      const price = locked ? `Descubra com ${fmt(item.threshold)} folhas totais` : tree && !E.eligible(state, item) ? "Outro bioma" : purchaseLabel(quote, count);
+      row.querySelector(".shop-price").textContent = price;
+      row.querySelector(".shop-owned").textContent = locked ? "" : tree ? `×${count}` : `Nv. ${count}`;
+      const benefit = tree ? `+${fmt(item.rate * purchaseQuantity, 2)} folhas/s de base` : upgradeBenefit(item.id);
+      row.querySelector(".shop-effect").textContent = locked ? "" : benefit;
+      button.disabled = !quote.ok;
+      button.setAttribute("aria-label", `${item.name}, ${purchaseQuantity}×, ${price}. ${quote.ok ? benefit : quote.message}`);
+      row.classList.toggle("affordable", quote.ok);
+      row.querySelector(".shop-shortfall").textContent = !locked && Number.isFinite(quote.price)
+        && state.leaves < quote.price && (!tree || E.eligible(state, item)) ? "Saldo insuficiente" : "";
     });
   }
   function renderGrove(){
@@ -249,7 +331,7 @@
     text('tree-count',`${count} ${count===1?'árvore':'árvores'}`);
     const signature=JSON.stringify([state.trees,state.activeSpecies]);
     if($('grove-rows').dataset.signature===signature)return;
-    html('grove-rows',trees.map(t=>`<button class="grove-row ${state.activeSpecies===t.id?'selected':''}" data-action="display" data-id="${t.id}" title="Exibir ${t.name} como árvore principal"><span class="grove-name">${shortNames[t.id]} <b>×${state.trees[t.id]}</b></span><span class="grove-sprites" aria-hidden="true">${Array.from({length:Math.min(9,state.trees[t.id])},()=>treeSVG(t.id,true)).join('')}</span></button>`).join('')+(trees.length<2?'<div class="grove-empty"><span>✧</span> Sua próxima árvore está na loja →</div>':''));
+    html('grove-rows',trees.map(t=>`<button class="grove-row ${state.activeSpecies===t.id?'selected':''}" data-action="display" data-id="${t.id}" title="Exibir ${t.name} como árvore principal"><span class="grove-name">${shortNames[t.id]} <b>×${state.trees[t.id]}</b></span><span class="grove-sprites" aria-hidden="true">${Array.from({length:Math.min(9,state.trees[t.id])},()=>treeArt(t.id)).join('')}</span></button>`).join('')+(trees.length<2?'<div class="grove-empty"><span>✧</span> Sua próxima árvore está na loja →</div>':''));
     $('grove-rows').dataset.signature=signature;
   }
 
@@ -265,19 +347,17 @@
         E.SPECIES.map((t) => {
           const unlocked = state.discovered.includes(t.id),
             allowed = E.eligible(state, t);
-          return `<article class="species-card ${unlocked ? "" : "locked"}"><div class="species-art">${treeSVG(t.id, true)}<span class="species-owned">${state.trees[t.id]} plantada(s)</span></div><div class="species-copy"><h3>${t.name}</h3><span class="latin">${t.latin}</span><p>${t.hybrid ? "Espécie fictícia de coleção." : t.region === "temperada" ? "Nativa da costa do Pacífico dos EUA." : t.id === "muda" ? "O começo da sua recuperação." : "Espécie nativa do Brasil."} Base: ${fmt(t.rate, 1)} folhas/s.</p><div class="species-needs"><span>◈ ${fmt(t.needs[0], 2)}</span><span>♧ ${fmt(t.needs[1], 2)}</span><span>☼ ${fmt(t.needs[2], 2)} /s</span></div><div class="card-status">${!unlocked ? (t.hybrid ? "Descubra no laboratório." : `Descoberta em ${fmt(t.threshold)} folhas totais.`) : !allowed ? "Plante em uma expedição no bioma de origem." : "Disponível neste ecossistema."}</div><button class="primary-button" data-action="plant" data-id="${t.id}" ${!allowed ? "disabled" : ""}></button><button class="text-button" data-action="fact" data-id="${t.id}">Conhecer a espécie ↗</button>${state.trees[t.id] > 0 ? `<button class="text-button" data-action="display" data-id="${t.id}">Exibir no cenário</button>` : ""}</div></article>`;
+          return `<article class="species-card ${unlocked ? "" : "locked"}"><div class="species-art">${treeArt(t.id)}<span class="species-owned">${state.trees[t.id]} plantada(s)</span></div><div class="species-copy"><h3>${t.name}</h3><span class="latin">${t.latin}</span><p>${t.hybrid ? "Espécie fictícia de coleção." : t.region === "temperada" ? "Nativa da costa do Pacífico dos EUA." : t.id === "muda" ? "O começo da sua recuperação." : "Espécie nativa do Brasil."} Base: ${fmt(t.rate, 1)} folhas/s.</p><div class="species-needs"><span>◈ ${fmt(t.needs[0], 2)}</span><span>♧ ${fmt(t.needs[1], 2)}</span><span>☼ ${fmt(t.needs[2], 2)} /s</span></div><div class="card-status">${!unlocked ? (t.hybrid ? "Descubra no laboratório." : `Descoberta em ${fmt(t.threshold)} folhas totais.`) : !allowed ? "Plante em uma expedição no bioma de origem." : "Disponível neste ecossistema."}</div><button class="primary-button" data-action="plant" data-id="${t.id}" ${!allowed ? "disabled" : ""}></button><button class="text-button" data-action="fact" data-id="${t.id}">Conhecer a espécie ↗</button>${state.trees[t.id] > 0 ? `<button class="text-button" data-action="display" data-id="${t.id}">Exibir no cenário</button>` : ""}</div></article>`;
         }).join(""),
       );
       $("species-grid").dataset.signature = signature;
     }
     document.querySelectorAll("[data-action=plant]").forEach((btn) => {
       const t = E.SPECIES.find((t) => t.id === btn.dataset.id),
-        cost = E.cost(state, "tree", t.id);
-      btn.textContent = `Plantar · ${fmt(cost)} folhas`;
-      btn.disabled =
-        !E.eligible(state, t) ||
-        state.leaves < cost ||
-        state.trees[t.id] >= 100;
+        quote = E.quotePurchase(state, "tree", t.id, purchaseQuantity);
+      btn.textContent = `Plantar ${purchaseQuantity}× · ${purchaseLabel(quote, state.trees[t.id])}`;
+      btn.disabled = !quote.ok;
+      btn.title = quote.message;
     });
   }
   function renderUpgrades() {
@@ -286,18 +366,73 @@
         "upgrades-grid",
         E.UPGRADES.map(
           (u) =>
-            `<article class="upgrade-card"><div class="upgrade-icon">${u.icon}</div><div><h3>${u.name}</h3><p>${u.desc}</p><small id="level-${u.id}"></small><button class="primary-button" data-action="upgrade" data-id="${u.id}"></button></div></article>`,
+            `<article class="upgrade-card"><div class="upgrade-icon" aria-hidden="true">${upgradeIcon(u.id)}</div><div><small id="level-${u.id}"></small><h3>${u.name}</h3><p>${u.purpose} ${u.desc}</p><strong class="upgrade-benefit" id="benefit-${u.id}"></strong><button class="primary-button" data-action="upgrade" data-id="${u.id}"></button><span class="upgrade-status" id="status-${u.id}"></span></div></article>`,
         ).join(""),
       );
     E.UPGRADES.forEach((u) => {
-      text("level-" + u.id, `Nível ${state.upgrades[u.id]} / 100`);
-      const b = document.querySelector(
-          `[data-action=upgrade][data-id=${u.id}]`,
-        ),
-        cost = E.cost(state, "upgrade", u.id);
-      b.textContent = `Melhorar · ${fmt(cost)} folhas`;
-      b.disabled = state.leaves < cost || state.upgrades[u.id] >= 100;
+      const level = state.upgrades[u.id];
+      text("level-" + u.id, `Nível ${level} / 100`);
+      const quote = E.quotePurchase(state, "upgrade", u.id, purchaseQuantity);
+      text("benefit-" + u.id, upgradeBenefit(u.id));
+      text("status-" + u.id, quote.ok ? "" : quote.message);
+      const button = document.querySelector(`[data-action=upgrade][data-id=${u.id}]`);
+      button.textContent = `Melhorar ${purchaseQuantity}× · ${purchaseLabel(quote, level)}`;
+      button.disabled = !quote.ok;
     });
+  }
+  const legacyBranches = [
+    { id: "natureza", name: "Natureza" },
+    { id: "tecnologia", name: "Tecnologia" },
+    { id: "ecologia", name: "Ecologia" },
+    { id: "sabedoria", name: "Sabedoria" },
+  ];
+  const skillMarks = {
+    growth: "M12 20v-7m0 3C6 16 3 12 3 7c6 0 9 3 9 9Zm0-4c0-5 3-8 9-9 0 6-3 9-9 9Z",
+    resilience: "M4 12a8 8 0 0 1 14-5l2 3m0-6v6h-6M20 14a8 8 0 0 1-14 4l-2-3m0 6v-6h6",
+    biomes: "m2 19 7-11 4 6 3-4 6 9Zm12-13a2 2 0 1 0 4 0 2 2 0 1 0-4 0",
+    harvest: "m5 9-2 8h17l2-8Zm6 0-2 8m7-8-2 8M4 13h17M12 18v3m-5 0h10M8 6l1-2m4 2V2m4 4 1-2",
+    machinery: "M3 4h6v6H3Zm12 10h6v6h-6ZM9 7h8v5M15 17H7v-5",
+    restoration: "m2 14 5-2 5 2 5-2 5 2m-20 4 5-2 5 2 5-2 5 2M12 12V9m0 1c-4 0-6-2-6-5 4 0 6 2 6 5Zm0-2c0-4 2-6 6-6 0 4-2 6-6 6Z",
+    diversity: "M3 16c5 1 7-2 9-5 1-4 5-6 8-3l2 1-3 1c0 6-6 10-13 9l-3 2 1-4Zm8-3-5-3-2-5 8 4",
+    heritage: "M5 7h14v14H5Zm-1-4h16v4H4Zm5 12c0-3 2-5 6-6 1 5-2 8-6 6Z",
+    practice: "M2 5c4-1 7 0 10 2 3-2 6-3 10-2v14c-4-1-7 0-10 2-3-2-6-3-10-2Zm10 2v14",
+  };
+  const skillGlyph = (id) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${skillMarks[id]}"/></svg>`;
+  let selectedSkill = "growth";
+  function renderLegacyTree() {
+    const tree = $("skill-grid");
+    const signature = JSON.stringify([state.meta.skills, state.meta.seeds, selectedSkill]);
+    if (tree.dataset.signature === signature) return;
+    tree.dataset.signature = signature;
+    html("skill-grid", legacyBranches.map((branch) => {
+      const nodes = E.SKILLS.filter((k) => k.branch === branch.id).map((k) => {
+        const level = state.meta.skills[k.id];
+        const locked = k.requires && !state.meta.skills[k.requires];
+        const max = level === k.max;
+        const cost = E.skillCost(state, k.id);
+        const status = max ? "Completa" : locked ? "Bloqueada" : state.meta.seeds >= cost ? "Disponível" : "Aguardando sementes";
+        return `<button type="button" class="skill-node" data-action="inspect-skill" data-id="${k.id}" data-owned="${level > 0}" data-locked="${!!locked}" aria-pressed="${k.id === selectedSkill}" aria-controls="skill-detail" aria-label="${k.name}. ${status}. Nível ${level} de ${k.max}.${max ? "" : " Custo " + cost + " sementes."}">
+          <span class="skill-medallion">${skillGlyph(k.id)}</span>
+          <strong>${k.name}</strong><small>${level}/${k.max} · ${max ? "Completa" : "✧ " + cost}</small>
+          ${!max && !locked && state.meta.seeds >= cost ? '<span class="skill-ready">Disponível</span>' : ""}
+        </button>`;
+      }).join("");
+      return `<div class="legacy-branch" data-branch="${branch.id}"><h3>${branch.name}</h3>${nodes}</div>`;
+    }).join(""));
+    const k = E.SKILLS.find((entry) => entry.id === selectedSkill);
+    const level = state.meta.skills[k.id];
+    const cost = E.skillCost(state, k.id);
+    const required = E.SKILLS.find((entry) => entry.id === k.requires);
+    const locked = required && !state.meta.skills[required.id];
+    const max = level === k.max;
+    const shortfall = Math.max(0, cost - state.meta.seeds);
+    const status = max ? "Completa" : locked ? "Bloqueada" : shortfall ? `Faltam ${shortfall} ${shortfall === 1 ? "semente" : "sementes"}` : "Disponível";
+    const costText = `${cost} ${cost === 1 ? "semente" : "sementes"}`;
+    $("skill-detail").dataset.branch = k.branch;
+    html("skill-detail", `<div class="skill-description"><span class="skill-caption">${legacyBranches.find((b) => b.id === k.branch).name} · Nível ${level} de ${k.max}</span>
+      <h3 id="skill-name">${k.name}</h3><p>${k.desc}</p><strong>${k.benefit}</strong>
+      <small>${required ? "Requer " + required.name + " no nível 1" + (locked ? "." : " ✓") : "Habilidade inicial do ramo."}</small></div>
+      <div class="skill-purchase"><span>${status}</span><button type="button" class="primary-button" data-action="skill" data-id="${k.id}" ${(max || locked || shortfall) ? "disabled" : ""}>${max ? "Nível máximo" : (level ? "Evoluir" : "Desbloquear") + " · " + costText}</button></div>`);
   }
   function renderGlobal() {
     text("seed-count", state.meta.seeds);
@@ -325,29 +460,7 @@
         disabled: b.id !== "atlantica" && !state.meta.skills.biomes,
       })),
     );
-    const signature = JSON.stringify(state.meta.skills);
-    if ($("skill-grid").dataset.signature !== signature) {
-      html(
-        "skill-grid",
-        E.SKILLS.map(
-          (k, i) =>
-            `<article class="skill-card"><div class="skill-number">0${i + 1} <span>⤴</span></div><h3>${k.name}</h3><p>${k.desc}</p><small>Nível ${state.meta.skills[k.id]} / ${k.max}</small><button class="secondary-button" data-action="skill" data-id="${k.id}"></button></article>`,
-        ).join(""),
-      );
-      $("skill-grid").dataset.signature = signature;
-    }
-    E.SKILLS.forEach((k) => {
-      const b = document.querySelector(`[data-action=skill][data-id=${k.id}]`),
-        cost = E.skillCost(state, k.id),
-        max = state.meta.skills[k.id] >= k.max;
-      b.textContent = max
-        ? "Habilidade completa"
-        : `Desbloquear · ${cost} sementes`;
-      b.disabled =
-        max ||
-        state.meta.seeds < cost ||
-        !!(k.requires && !state.meta.skills[k.requires]);
-    });
+    renderLegacyTree();
     html(
       "archive-list",
       state.meta.archives.length
@@ -402,7 +515,7 @@
     drawCharts();
   }
   function render() {
-    
+
     text("garden-leaves", fmt(state.leaves));
     text("click-rate", "+" + fmt(E.clickRate(state), 1));
     text("idle-rate", "+" + fmt(E.budget(state).rate, 1));
@@ -411,14 +524,14 @@
     $("demo-banner").hidden = !demo;
     $("exit-demo").hidden = !demo;
     $("demo-button").hidden = demo;
-    text("sound-toggle", audio.enabled ? "♫" : "♪");
+
     $("sound-toggle").title=audio.enabled ? "Desligar som" : "Ativar som";
     $("sound-toggle").setAttribute("aria-label", $("sound-toggle").title);
     $("sound-toggle").setAttribute("aria-pressed", String(audio.enabled));
     $("sound-setting").checked = audio.enabled;
     $("motion-setting").checked = state.settings.motion;
     renderScene();
-    
+
     if (currentView === "melhorias") {
       renderResources("resource-detail");
       renderUpgrades();
@@ -498,7 +611,7 @@
       t.name,
       body,
       [{ label: "Continuar cultivando", primary: true }],
-      treeSVG(id, true),
+      treeArt(id),
     );
   }
   function showNextCard() {
@@ -735,13 +848,26 @@
     );
   }
   document.addEventListener("click", (event) => {
+    const quantityButton = event.target.closest("[data-quantity]");
+    if (quantityButton) {
+      purchaseQuantity = Number(quantityButton.dataset.quantity);
+      quantityControls.forEach((group) => group.querySelectorAll("button").forEach((button) => {
+        button.setAttribute("aria-pressed", String(Number(button.dataset.quantity) === purchaseQuantity));
+      }));
+      renderShop();
+      if (currentView === "melhorias") renderUpgrades();
+      if (currentView === "floresta") renderSpecies();
+      return;
+    }
     const shop=event.target.closest('[data-shop]');
     if(shop){setShopTab(shop.dataset.shop);return;}
     const buying=event.target.closest('[data-shop-buy]');
-    if(buying&&!buying.disabled){action(()=>E.buy(state,buying.dataset.shopBuy,buying.dataset.id));return;}
+    if(buying&&!buying.disabled){action(()=>E.buy(state,buying.dataset.shopBuy,buying.dataset.id,purchaseQuantity));return;}
     const nav = event.target.closest("[data-nav]");
     if (nav) {
       navigate(nav.dataset.nav, true);
+      if (nav.id === "event-alert")
+        $("rescue-field").querySelector("button:not([hidden])")?.focus();
       return;
     }
     const b = event.target.closest("[data-action]");
@@ -750,19 +876,19 @@
     switch (b.dataset.action) {
       case 'climate-info': {
         const c=E.climate(state);text('dialog-eyebrow',c.season);
-        dialog(c.icon+' '+c.name,c.weather==='chuva'?'Água ×2,2 e produção +25%.':c.weather==='seca'?'Produção −40%. Use um regador para proteger sua floresta por 60 segundos.':'Luz solar +20%. Hora de crescer.',[{label:'Jogar',primary:true}]);break;
+        dialog(c.icon+' '+c.name,c.effect + " Próxima mudança em " + c.remaining + " s.",[{label:'Jogar',primary:true}]);break;
       }
       case 'upgrade-info': {
-        const u=E.UPGRADES.find(u=>u.id===id);text('dialog-eyebrow','MELHORIA');dialog(u.name,u.desc,[{label:'Entendi',primary:true}]);break;
+        const u=E.UPGRADES.find(u=>u.id===id);text('dialog-eyebrow','MELHORIA');dialog(u.name,u.purpose+" "+u.desc+" Lote atual · "+upgradeBenefit(id)+".",[{label:'Entendi',primary:true}]);break;
       }
       case "tend":
         action(() => E.tend(state, id));
         break;
       case "plant":
-        action(() => E.buy(state, "tree", id));
+        action(() => E.buy(state, "tree", id, purchaseQuantity));
         break;
       case "upgrade":
-        action(() => E.buy(state, "upgrade", id));
+        action(() => E.buy(state, "upgrade", id, purchaseQuantity));
         break;
       case "fact":
         fact(id);
@@ -773,8 +899,18 @@
           return { ok: true, message: "Espécie selecionada para o cenário." };
         });
         break;
+      case "inspect-skill":
+        selectedSkill = id;
+        renderLegacyTree();
+        $("skill-detail").focus({ preventScroll: true });
+        $("skill-detail").scrollIntoView({ block: "nearest" });
+        break;
       case "skill":
-        action(() => E.learn(state, id));
+        if (action(() => E.learn(state, id)).ok) {
+          const node = $("skill-grid").querySelector(`[data-id="${id}"]`);
+          node.classList.add("skill-learned");
+          node.focus({ preventScroll: true });
+        }
         break;
     }
   });
@@ -786,7 +922,19 @@
       n.className = "floating-leaf";
       n.textContent = "+" + fmt(r.amount, 1) + " ❧";
       n.style.setProperty("--drift", Math.random() * 60 - 30 + "px");
-      $("click-stage").append(n);
+      const stage = $("click-stage");
+      stage.append(n);
+      if (state.settings.motion && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        for (let i = 0; i < 4; i++) {
+          const leaf = document.createElement("i");
+          leaf.className = "leaf-speck";
+          leaf.ariaHidden = "true";
+          leaf.style.setProperty("--dx", (Math.random() - 0.5) * 140 + "px");
+          leaf.style.setProperty("--dy", -(15 + Math.random() * 60) + "px");
+          stage.append(leaf);
+          setTimeout(() => leaf.remove(), 680);
+        }
+      }
       $("tree-button").classList.remove("clicked");void $("tree-button").offsetWidth;$("tree-button").classList.add("clicked");
       $("tap-hint").classList.add("experienced");
       setTimeout(() => n.remove(), 1000);
@@ -796,9 +944,14 @@
   $("water-button").addEventListener("click", () =>
     action(() => E.water(state)),
   );
-  $("event-action").addEventListener("click", () =>
-    action(() => E.rescue(state)),
-  );
+  $("rescue-field").addEventListener("click", (input) => {
+    const button = input.target.closest(".rescue-target");
+    if (!button || button.hidden) return;
+    const event = displayedEvent;
+    action(() => state.event === event && E.rescue(state, Number(button.dataset.target)));
+    if (input.detail === 0)
+      ($("rescue-field").querySelector("button:not([hidden])") || $("tree-button")).focus();
+  });
   $("cross-button").addEventListener("click", () =>
     action(() => {
       const r = E.cross(state, $("parent-a").value, $("parent-b").value);

@@ -201,3 +201,17 @@ test("trimmed history retains per-interval clicks and survives JSON round trip",
   assert.equal(s.history[0].clickDelta, 1);
   assert.deepEqual(E.decode(E.encode(s), NOW + 7500000), s);
 });
+
+test("each floating target counts once, including after loading an old partial rescue", () => {
+  const state = E.fresh();
+  state.event = { type: "fire", hits: 2, target: 8, left: 20 };
+  assert.deepEqual(E.clearedTargets(state.event), [0, 1]);
+  assert.equal(E.rescue(state, 6).ok, true);
+  const restored = E.decode(E.encode(state));
+  assert.equal(E.rescue(restored, 6).ok, false);
+  assert.equal(E.rescue(restored, 8).ok, false);
+  assert.equal(restored.event.hits, 3);
+  for (const id of [4, 5, 7, 2, 3]) assert.ok(E.rescue(restored, id).ok);
+  assert.equal(restored.event, null);
+  assert.equal(restored.rescues, 1);
+});

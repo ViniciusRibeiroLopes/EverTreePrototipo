@@ -13,16 +13,17 @@ O save é específico do navegador e da origem. Ao alternar entre arquivo local 
 
 ## O que foi implementado
 
-1. **Jornada ambiental:** terreno degradado, limpeza gradual, céu que muda de cor, rio, flora, fauna e quatro fases de regeneração.
-2. **Animações:** copas ao vento, nuvens, água corrente, chuva, pássaros, borboleta, partículas de cuidado e feedback de eventos. SVG e CSS locais, respeitando `prefers-reduced-motion` e a preferência interna.
+1. **Jornada ambiental:** cinco estágios levam o vale industrial a uma floresta recuperada. A paisagem pintada recebe vegetação, fauna e fábricas em camadas que respondem à recuperação real da reserva.
+2. **Animações:** copas ao vento, nuvens, fumaça, chuva, pássaros, borboleta, partículas de cuidado e feedback de eventos. Canvas e CSS locais, respeitando `prefers-reduced-motion` e a preferência interna.
 3. **Cultivo:** árvores plantadas em inventário, custos crescentes, consumo individual de água, nutrientes e luz. Ipê-amarelo, jacarandá-da-bahia e sequoia-costeira têm cards com informações e fontes. A sequoia exige uma expedição à Costa do Pacífico.
-4. **Estratégia:** quatro estações (3 minutos cada), previsão a cada minuto; chuva, seca, regadores acumulados, captação, compostagem, manejo de luz e viveiros. A eficiência cai quando os recursos não sustentam a demanda.
-5. **Emergências:** incêndios e pragas, com oito ações em 30 segundos. Sucesso dá 35 folhas e um regador. Falha reduz a produção em 35% por 90 segundos; não apaga árvores. Um aviso no topo permite chegar ao evento a partir de qualquer tela.
+4. **Estratégia:** quatro estações (3 minutos cada), previsão a cada minuto, com chuva, seca, tempestades, migração e grande reflorestamento. Há regadores acumulados, captação, compostagem, manejo de luz e viveiros. A eficiência cai quando os recursos não sustentam a demanda.
+5. **Emergências:** incêndios e pragas espalham oito alvos circulares pelo vale. Apague cada foco ou espante cada praga em até 30 segundos. Sucesso dá 35 folhas e um regador. Falha reduz a produção em 35% por 90 segundos; não apaga árvores. Um aviso no topo permite chegar ao evento a partir de qualquer tela.
 6. **Polinização:** duas receitas fictícias, 35% de chance; cada terceira tentativa global garante o híbrido quando a receita é compatível. Cada tentativa custa 180 folhas, 25 água e 25 nutrientes. Tentativas sem híbrido devolvem 15 nutrientes. As árvores parentais permanecem.
-7. **Prestígio:** doe uma floresta com 100% de recuperação e 5.000 folhas produzidas. Ganhe `floor(sqrt(folhas / 5000) × 3)` sementes ancestrais e invista em produção permanente (+50% por nível), reposição de recursos e novos biomas. Há dependências entre as habilidades.
+7. **Prestígio:** doe uma floresta com 100% de recuperação e 5.000 folhas produzidas. A recompensa base é de `floor(sqrt(folhas / 5000) × 3)` sementes ancestrais. Invista em produção permanente (+50% por nível), reposição de recursos e novos biomas. A árvore de nove habilidades distribui efeitos entre Natureza, Tecnologia, Ecologia e Sabedoria. O painel de cada nó mostra custo, pré-requisitos e benefício do próximo nível.
 8. **Estatísticas:** produção por minuto, cliques por intervalo, tabela acessível, períodos selecionáveis e distribuição de árvores entre biomas atuais e florestas doadas. Gráficos Canvas locais com inspeção por cursor ou teclado; nenhuma biblioteca remota é necessária.
 9. **Som procedural:** Web Audio gera vento, água, pássaros e notas pentatônicas em camadas. Ativação explícita, volume suave e pausa quando a aba fica oculta.
 10. **Persistência:** JSON, código `ET2.` em Base64, validação de estrutura/limites, confirmação de substituição, cópia anterior ao importar e migração do save v1. Base64 é transporte, não criptografia.
+11. **Compras em lote:** os seletores de 1×, 10× e 50× na loja, na coleção e nas melhorias somam os preços progressivos individuais. O lote inteiro deve caber no saldo e no limite de 100 unidades ou níveis.
 
 ## Simulação online e offline
 
@@ -37,28 +38,32 @@ O save é específico do navegador e da origem. Ao alternar entre arquivo local 
 
 ## Arquitetura
 
-| Arquivo                 | Responsabilidade                                                                                                                                     |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `engine.js`             | Estado versionado, economia, clima, eventos, RNG, regras de prestígio, simulação offline e validação de saves. Exportação UMD para navegador e Node. |
-| `app.js`                | Navegação, renderização, controles acessíveis, gráficos, diálogos, importação/exportação e persistência.                                             |
-| `audio.js`              | Síntese procedural com AudioContext e controle de camadas.                                                                                           |
-| `index.html`            | Sete telas, cenário SVG, controles e diálogo modal.                                                                                                  |
-| `styles.css`            | Identidade visual, layouts responsivos e animações.                                                                                                  |
-| `tests/engine.test.cjs` | Testes determinísticos com `node:test`, sem dependências.                                                                                            |
-| `scripts/`              | Servidor local e cópia dos arquivos para distribuição.                                                                                               |
+| Arquivo                                   | Responsabilidade                                                                                                                                      |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `engine.js`                               | Estado versionado, economia, clima, eventos, RNG, regras de prestígio, simulação offline e validação de saves. Exportação UMD para navegador e Node. |
+| `app.js`                                  | Navegação, renderização, controles acessíveis, gráficos, diálogos, importação/exportação e persistência.                                              |
+| `audio.js`                                | Síntese procedural com AudioContext e controle de camadas.                                                                                            |
+| `index.html`                              | Sete telas, quadro da reserva, controles e diálogos.                                                                                                  |
+| `styles.css`                              | Estilos compartilhados dos painéis e controles.                                                                                                       |
+| `scene.js`, `scene.css`                   | Paisagem em camadas, fauna, clima e animações ambientais.                                                                                             |
+| `game.css`, `upgrades.css`, `legacy.css`  | Layout da reserva, viveiro, controles de compra e árvore de habilidades.                                                                              |
+| `images/valley.jpg`, `valley-restored.jpg`| Paisagens do vale degradado e restaurado (plano de fundo).                                                                                            |
+| `images/*.png`                            | Seis ilustrações de espécies (pioneer, ipe, jacaranda, sequoia, aurora, lumina).                                                                      |
+| `tests/*.test.cjs`                        | Testes determinísticos com `node:test`, sem dependências.                                                                                             |
+| `scripts/`                                | Servidor local e cópia dos arquivos para distribuição.                                                                                                |
 
 A versão original foi preservada em um ZIP de backup entregue junto ao projeto. Nenhuma publicação ou push remoto foi realizado.
 
 ## Roteiro de apresentação
 
-1. Abra **Meu ecossistema** e cuide da muda pelo mouse ou teclado.
-2. Em **Espécies & cultivo**, plante mais árvores e consulte os cards ecológicos.
+1. Abra **Reserva** e cuide da muda pelo mouse ou teclado.
+2. Em **Coleção**, plante mais árvores e consulte os cards ecológicos.
 3. Observe entrada e demanda dos três recursos. Faça uma melhoria para compensar o consumo.
 4. Em **Preferências & save**, abra a **demonstração temporária**. O save real é preservado; atualizar a página ou voltar ao save real encerra a demonstração.
 5. Teste seca e regador, incêndio e pragas pelos botões da faixa de demonstração.
 6. No laboratório, escolha ipê + jacarandá e realize a polinização. Continue até descobrir Aurora.
 7. No diário, escolha o período, passe o cursor no gráfico e use as setas do teclado. Os dados iniciais da demonstração são fictícios e identificados pela faixa da demonstração.
-8. Em **Reflorestamento global**, adquira Raízes ancestrais → Ciclo da vida → Horizontes vivos. Escolha Costa do Pacífico e doe a floresta. Confira o reinício e o bônus permanente.
+8. Em **Legado**, adquira Raízes ancestrais → Ciclo da vida → Horizontes vivos. Escolha Costa do Pacífico e doe a floresta. Confira o reinício e o bônus permanente.
 9. Copie um código ou baixe o JSON. Importe a cópia e confira a confirmação. Um JSON inválido deve ser rejeitado sem alterar a partida.
 10. Volte ao save real antes de terminar. Feche e reabra para verificar o resumo offline.
 
@@ -75,3 +80,4 @@ Híbridos intergenéricos, multiplicadores, consumo, estações e restauração 
 ## Limites do protótipo
 
 Save local sem conta ou sincronização entre aparelhos. Use uma aba por partida. Não há servidor de jogo nem proteção antitrapaça; um save editado pelo próprio jogador pode alterar a economia. A validação evita dados malformados, referências desconhecidas e valores fora dos limites, mas não autentica a autoria do progresso. As florestas doadas mantêm os 200 registros mais recentes.
+

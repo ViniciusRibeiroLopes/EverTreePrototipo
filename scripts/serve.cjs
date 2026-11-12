@@ -5,16 +5,13 @@ const root = path.resolve(__dirname, "..");
 const types = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
+  ".webp": "image/webp",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
   ".js": "text/javascript; charset=utf-8",
 };
-const allowed = new Set([
-  "index.html",
-  "styles.css",
-  "game.css",
-  "engine.js",
-  "app.js",
-  "audio.js",
-]);
+const allowed = new Set(require("./assets.cjs"));
 const port = Number(process.env.PORT) || 8765;
 http
   .createServer((req, res) => {
