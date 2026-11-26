@@ -492,6 +492,7 @@
     overlay.addEventListener('animationend', () => {
       overlay.remove();
       style.remove();
+      window.dispatchEvent(new CustomEvent('evertree:intro-done'));
     }, { once: true });
   }
 

@@ -1,4 +1,4 @@
-/* Layered 2D indie arcade pixel-art habitat. Deterministic and belongs to the current expedition. */
+/* Layered 2D indie arcade pixel-art habitat: evolves from devastated industrial wasteland to living forest. */
 (() => {
   "use strict";
   const stages = [
@@ -47,10 +47,11 @@
     },
   };
 
-  const INDUSTRIAL = {
-    skyTop: "#577590", skyMid: "#7895b2", skyBot: "#cbd5c0",
-    far: "#5c6d7a", mid: "#5c6f5b", near: "#586b4d", grass: "#6d825c",
-    river: "#5e8b9e", riverHi: "#a9d6e5",
+  // Truly devastated, polluted industrial wasteland palette at 0% recovery
+  const DEVASTATED = {
+    skyTop: "#2a2730", skyMid: "#4d444a", skyBot: "#856e5d",
+    far: "#3b353c", mid: "#473c36", near: "#3e332b", grass: "#57483b",
+    river: "#4b433a", riverHi: "#706252",
   };
 
   const random = generator(80239);
@@ -64,9 +65,22 @@
     };
   }).sort((a, b) => a.y - b.y);
 
+  const deadStumps = Array.from({ length: 10 }, (_, i) => ({
+    x: i % 2 ? 0.08 + random() * 0.30 : 0.62 + random() * 0.30,
+    y: 0.66 + random() * 0.28,
+    vanishAt: 16 + random() * 22,
+    hasBarrel: i % 3 === 0,
+  }));
+
+  const soilCracks = Array.from({ length: 18 }, () => ({
+    x: random(),
+    y: 0.65 + random() * 0.31,
+    len: 4 + Math.floor(random() * 6),
+  }));
+
   const meadow = Array.from({ length: 95 }, (_, i) => ({
     x: random(), y: 0.64 + random() * 0.34,
-    phase: random() * TAU, threshold: 6 + random() * 68,
+    phase: random() * TAU, threshold: 8 + random() * 68,
     flowerColor: ["#ff70a6", "#ffd166", "#ffffff", "#a0c4ff"][i % 4],
   }));
 
@@ -192,17 +206,18 @@
 
     palette() {
       const target = BIOME_PALETTES[this.state?.biome] || BIOME_PALETTES.atlantica;
-      const t = clamp(this.recovery / 100);
+      // Smooth non-linear curve so 0-12% feels stark & industrial, then blooms vividly
+      const t = clamp(Math.pow(this.recovery / 100, 0.85));
       return {
-        skyTop: lerpHex(INDUSTRIAL.skyTop, target.skyTop, t),
-        skyMid: lerpHex(INDUSTRIAL.skyMid, target.skyMid, t),
-        skyBot: lerpHex(INDUSTRIAL.skyBot, target.skyBot, t),
-        far: lerpHex(INDUSTRIAL.far, target.far, t),
-        mid: lerpHex(INDUSTRIAL.mid, target.mid, t),
-        near: lerpHex(INDUSTRIAL.near, target.near, t),
-        grass: lerpHex(INDUSTRIAL.grass, target.grass, t),
-        river: lerpHex(INDUSTRIAL.river, target.river, t),
-        riverHi: lerpHex(INDUSTRIAL.riverHi, target.riverHi, t),
+        skyTop: lerpHex(DEVASTATED.skyTop, target.skyTop, t),
+        skyMid: lerpHex(DEVASTATED.skyMid, target.skyMid, t),
+        skyBot: lerpHex(DEVASTATED.skyBot, target.skyBot, t),
+        far: lerpHex(DEVASTATED.far, target.far, t),
+        mid: lerpHex(DEVASTATED.mid, target.mid, t),
+        near: lerpHex(DEVASTATED.near, target.near, t),
+        grass: lerpHex(DEVASTATED.grass, target.grass, t),
+        river: lerpHex(DEVASTATED.river, target.river, t),
+        riverHi: lerpHex(DEVASTATED.riverHi, target.riverHi, t),
       };
     }
 
@@ -228,7 +243,7 @@
     }
 
     drawSky(pal, w, h) {
-      const ctx = this.ctx, t = this.clock;
+      const ctx = this.ctx, t = this.clock, life = this.recovery;
       const bands = [
         [0, 0.25, pal.skyTop],
         [0.25, 0.50, pal.skyMid],
@@ -240,25 +255,34 @@
       ctx.fillStyle = pal.skyMid;
       for (let x = 0; x < w; x += 2) ctx.fillRect(x, ri(h * 0.24), 1, 1);
 
+      // Sun is veiled by smog at low recovery, brightens as life grows
       const sunX = ri(w * 0.80), sunY = ri(h * 0.16);
-      const sunVis = this.weather === "tempestade" ? 0.25 : 1;
-      if (sunVis > 0.2) {
-        ctx.save();
-        ctx.globalAlpha = sunVis;
-        px(ctx, sunX - 6, sunY - 6, 12, 12, "#ffd166");
-        px(ctx, sunX - 5, sunY - 7, 10, 14, "#ffd166");
-        px(ctx, sunX - 7, sunY - 5, 14, 10, "#ffd166");
-        px(ctx, sunX - 4, sunY - 4, 8, 8, "#fff3b0");
+      const sunVis = (this.weather === "tempestade" ? 0.22 : 1) * clamp(0.30 + (life / 50) * 0.70);
+      ctx.save();
+      ctx.globalAlpha = sunVis;
+      const sunOuter = life < 20 ? "#d4a373" : "#ffd166";
+      const sunInner = life < 20 ? "#e9c46a" : "#fff3b0";
+      px(ctx, sunX - 6, sunY - 6, 12, 12, sunOuter);
+      px(ctx, sunX - 5, sunY - 7, 10, 14, sunOuter);
+      px(ctx, sunX - 7, sunY - 5, 14, 10, sunOuter);
+      px(ctx, sunX - 4, sunY - 4, 8, 8, sunInner);
+      if (life >= 15) {
         const rOff = Math.floor(t * 2) % 2;
-        px(ctx, sunX - 10 - rOff, sunY - 1, 2, 2, "#fff3b0");
-        px(ctx, sunX + 8 + rOff, sunY - 1, 2, 2, "#fff3b0");
-        px(ctx, sunX - 1, sunY - 10 - rOff, 2, 2, "#fff3b0");
-        px(ctx, sunX - 1, sunY + 8 + rOff, 2, 2, "#fff3b0");
-        ctx.restore();
+        px(ctx, sunX - 10 - rOff, sunY - 1, 2, 2, sunInner);
+        px(ctx, sunX + 8 + rOff, sunY - 1, 2, 2, sunInner);
+        px(ctx, sunX - 1, sunY - 10 - rOff, 2, 2, sunInner);
+        px(ctx, sunX - 1, sunY + 8 + rOff, 2, 2, sunInner);
       }
+      ctx.restore();
 
-      const cloudTone = this.weather === "tempestade" ? "#6c757d" : "#ffffff";
-      const cloudShade = this.weather === "tempestade" ? "#495057" : "#dbe7f0";
+      // Clouds shift from dark toxic soot clouds to fluffy white cartoon clouds
+      const cleanMix = clamp(life / 40);
+      const cloudTone = this.weather === "tempestade"
+        ? "#5c646d"
+        : lerpHex("#6c666b", "#ffffff", cleanMix);
+      const cloudShade = this.weather === "tempestade"
+        ? "#42484f"
+        : lerpHex("#4b454b", "#dbe7f0", cleanMix);
       const clouds = [
         [0.18, 0.14, 1.0, 0.012],
         [0.52, 0.10, 0.85, 0.008],
@@ -275,12 +299,23 @@
     }
 
     drawTerrain(pal, w, h) {
-      const ctx = this.ctx, t = this.clock;
+      const ctx = this.ctx, t = this.clock, life = this.recovery;
       ctx.fillStyle = pal.far;
       for (let x = 0; x < w; x += 2) {
         const mh = Math.sin(x * 0.035) * 10 + Math.cos(x * 0.08) * 5 + 16;
         const yTop = ri(h * 0.48 - mh);
         ctx.fillRect(x, yTop, 2, h - yTop);
+      }
+
+      // Slag/tailings mounds on horizon when devastated
+      const wasteland = clamp(1 - life / 45);
+      if (wasteland > 0.05) {
+        ctx.save();
+        ctx.globalAlpha = wasteland * 0.85;
+        px(ctx, ri(w * 0.04), ri(h * 0.49), 26, 8, "#332c28");
+        px(ctx, ri(w * 0.08), ri(h * 0.45), 16, 6, "#3f3731");
+        px(ctx, ri(w * 0.86), ri(h * 0.50), 22, 7, "#332c28");
+        ctx.restore();
       }
 
       ctx.fillStyle = pal.mid;
@@ -291,55 +326,103 @@
         px(ctx, x, yTop, 2, 1, pal.grass);
       }
 
-      const air = clamp(1 - this.recovery / 88);
-      if (air > 0.05) {
+      // Industrial area: active & smoking at 0%, powering down at 12-30%, overtaken by vines, gone at 45%+
+      const factoryAlpha = clamp(1 - life / 48);
+      if (factoryAlpha > 0.04) {
         ctx.save();
-        ctx.globalAlpha = air;
-        this.drawPixelFactory(ri(w * 0.18), ri(h * 0.53), t);
-        this.drawPixelFactory(ri(w * 0.76), ri(h * 0.52), t + 1.7);
+        ctx.globalAlpha = factoryAlpha;
+        const smokePower = clamp(1 - life / 26);
+        const vineGrowth = clamp((life - 8) / 24);
+        this.drawPixelFactory(ri(w * 0.16), ri(h * 0.54), t, smokePower, vineGrowth, 1.15);
+        this.drawPixelFactory(ri(w * 0.31), ri(h * 0.55), t + 0.9, smokePower * 0.85, vineGrowth, 0.85);
+        this.drawPixelFactory(ri(w * 0.78), ri(h * 0.53), t + 1.7, smokePower, vineGrowth, 1.0);
         ctx.restore();
       }
 
+      // Foreground terrain
       px(ctx, 0, h * 0.60, w, h * 0.40, pal.near);
       px(ctx, 0, h * 0.60, w, 2, pal.grass);
 
-      const riverAlpha = clamp(this.recovery / 35);
-      if (riverAlpha > 0.05) {
+      // Dry cracked earth patches when barren (< 28% recovery)
+      if (life < 28) {
         ctx.save();
-        ctx.globalAlpha = riverAlpha;
-        for (let y = ri(h * 0.61); y < h; y++) {
-          const prog = (y - h * 0.61) / (h * 0.39);
-          const rx = ri(w * 0.50 + Math.sin(prog * 3.1) * 14);
-          const rw = ri(6 + prog * 28);
-          px(ctx, rx - rw / 2, y, rw, 1, pal.river);
-          px(ctx, rx - rw / 2 - 1, y, 1, 1, "#2d6a4f");
-          px(ctx, rx + rw / 2, y, 1, 1, "#2d6a4f");
-          if ((y + Math.floor(t * 6)) % 5 === 0) {
-            const sx = rx - rw / 4 + ((y * 7 + Math.floor(t * 4)) % Math.max(2, ri(rw / 2)));
-            px(ctx, sx, y, 3, 1, pal.riverHi);
-          }
+        ctx.globalAlpha = clamp(1 - life / 28) * 0.65;
+        for (const c of soilCracks) {
+          const cx = ri(c.x * w), cy = ri(c.y * h);
+          px(ctx, cx, cy, c.len, 1, "#29201a");
+          px(ctx, cx + 1, cy + 1, Math.max(1, c.len - 2), 1, "#29201a");
         }
+        ctx.restore();
+      }
+
+      // Polluted murky channel turns into a sparkling clear blue river as recovery grows
+      const riverClean = clamp(life / 42);
+      for (let y = ri(h * 0.61); y < h; y++) {
+        const prog = (y - h * 0.61) / (h * 0.39);
+        const rx = ri(w * 0.50 + Math.sin(prog * 3.1) * 14);
+        const rw = ri(5 + prog * 26);
+        px(ctx, rx - rw / 2, y, rw, 1, pal.river);
+        const bankCol = lerpHex("#2d2620", "#215c3d", riverClean);
+        px(ctx, rx - rw / 2 - 1, y, 1, 1, bankCol);
+        px(ctx, rx + rw / 2, y, 1, 1, bankCol);
+        if ((y + Math.floor(t * (riverClean > 0.3 ? 6 : 2))) % 5 === 0) {
+          const sx = rx - rw / 4 + ((y * 7 + Math.floor(t * 4)) % Math.max(2, ri(rw / 2)));
+          px(ctx, sx, y, riverClean > 0.3 ? 3 : 2, 1, pal.riverHi);
+        }
+      }
+
+      // Rusted drain pipe spilling sludge into the river at < 25% recovery
+      if (life < 25) {
+        ctx.save();
+        ctx.globalAlpha = clamp(1 - life / 25);
+        const pxX = ri(w * 0.44), pxY = ri(h * 0.64);
+        px(ctx, pxX - 7, pxY, 8, 3, "#5a463a");
+        px(ctx, pxX, pxY - 1, 2, 5, "#3d2f27");
+        const drip = Math.floor(t * 4) % 4;
+        px(ctx, pxX + 2, pxY + 2 + drip, 2, 2, "#6c6344");
         ctx.restore();
       }
     }
 
-    drawPixelFactory(x, y, t) {
+    drawPixelFactory(x, y, t, smokePower, vineGrowth, sc = 1) {
       const ctx = this.ctx;
-      px(ctx, x - 10, y - 10, 20, 10, "#5c5346");
-      px(ctx, x - 11, y - 12, 7, 3, "#463f3a");
-      px(ctx, x - 3, y - 12, 7, 3, "#463f3a");
-      px(ctx, x + 5, y - 12, 6, 3, "#463f3a");
-      px(ctx, x + 5, y - 20, 4, 10, "#463f3a");
-      px(ctx, x + 4, y - 21, 6, 2, "#2b2d42");
-      px(ctx, x - 7, y - 7, 3, 3, "#f4a261");
-      px(ctx, x - 1, y - 7, 3, 3, "#f4a261");
-      for (let i = 0; i < 4; i++) {
-        const a = (i / 4 + t * 0.28) % 1;
-        const sx = ri(x + 6 + a * 12);
-        const sy = ri(y - 23 - a * 14);
-        const sz = ri(2 + a * 4);
-        ctx.fillStyle = `rgba(180, 185, 190, ${(1 - a) * 0.65})`;
-        ctx.fillRect(sx, sy, sz, sz);
+      const bw = ri(22 * sc), bh = ri(11 * sc);
+      // Brick industrial hall
+      px(ctx, x - bw / 2, y - bh, bw, bh, "#4a423e");
+      px(ctx, x - bw / 2 - 1, y - bh - 2, ri(7 * sc), 3, "#36302d");
+      px(ctx, x - ri(2 * sc), y - bh - 2, ri(7 * sc), 3, "#36302d");
+      px(ctx, x + ri(5 * sc), y - bh - 2, ri(6 * sc), 3, "#36302d");
+      // Tall smokestack
+      const stH = ri(12 * sc);
+      px(ctx, x + ri(5 * sc), y - bh - stH, 4, stH, "#383230");
+      px(ctx, x + ri(4 * sc), y - bh - stH - 1, 6, 2, "#242124");
+      // Red blinking aircraft warning light when active
+      if (smokePower > 0.3 && Math.floor(t * 2.5) % 2 === 0) {
+        px(ctx, x + ri(6 * sc), y - bh - stH - 3, 2, 2, "#e63946");
+      }
+      // Glowing furnace windows when active, dark when shut down
+      const winCol = smokePower > 0.25 ? "#f77f00" : "#2b2829";
+      px(ctx, x - ri(7 * sc), y - ri(7 * sc), 3, 3, winCol);
+      px(ctx, x - ri(1 * sc), y - ri(7 * sc), 3, 3, winCol);
+
+      // Creeping green vines reclaiming factory bricks as recovery begins!
+      if (vineGrowth > 0.05) {
+        const vh = ri(bh * vineGrowth);
+        px(ctx, x - bw / 2, y - vh, 2, vh, "#2d6a4f");
+        px(ctx, x - bw / 2 + 2, y - ri(vh * 0.7), 2, ri(vh * 0.7), "#40916c");
+        px(ctx, x + ri(3 * sc), y - ri(vh * 0.8), 2, ri(vh * 0.8), "#2d6a4f");
+      }
+
+      // Billowing dark pixel smoke plumes
+      if (smokePower > 0.05) {
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6 + t * 0.30) % 1;
+          const sx = ri(x + ri(6 * sc) + a * 16);
+          const sy = ri(y - bh - stH - 3 - a * 18);
+          const sz = ri(2 + a * 5);
+          ctx.fillStyle = `rgba(60, 56, 60, ${(1 - a) * 0.75 * smokePower})`;
+          ctx.fillRect(sx, sy, sz, sz);
+        }
       }
     }
 
@@ -364,13 +447,47 @@
     drawVegetation(pal, w, h) {
       const ctx = this.ctx, t = this.clock, life = this.recovery;
 
+      // Charred stumps & industrial barrels in devastated phase
+      for (const stump of deadStumps) {
+        if (life >= stump.vanishAt) continue;
+        const fade = clamp((stump.vanishAt - life) / 8);
+        const sx = ri(stump.x * w), sy = ri(stump.y * h);
+        ctx.save();
+        ctx.globalAlpha = fade;
+        if (stump.hasBarrel) {
+          // Rusted barrel
+          px(ctx, sx - 2, sy - 4, 4, 4, "#6c4a3a");
+          px(ctx, sx - 2, sy - 3, 4, 1, "#3b2c25");
+        } else {
+          // Charred tree stump
+          px(ctx, sx - 2, sy - 4, 4, 4, "#3b302a");
+          px(ctx, sx - 3, sy - 1, 6, 1, "#29201a");
+          px(ctx, sx - 1, sy - 5, 2, 1, "#52443c");
+        }
+        ctx.restore();
+      }
+
+      // Drifting industrial ash motes at < 22% recovery
+      if (life < 22 && this.moving) {
+        ctx.save();
+        ctx.globalAlpha = clamp(1 - life / 22) * 0.55;
+        for (let i = 0; i < 18; i++) {
+          const d = weatherDots[i];
+          const ay = ri(((d.y + t * 0.14 * d.speed) % 1) * h);
+          const ax = ri((d.x + Math.sin(t + d.phase) * 0.03) * w);
+          px(ctx, ax, ay, 1, 1, "#b0a99f");
+        }
+        ctx.restore();
+      }
+
+      // Growing meadow grass & wildflowers
       for (const tuft of meadow) {
         const amount = clamp((life - tuft.threshold) / 14);
         if (!amount) continue;
         const x = ri(tuft.x * w), y = ri(tuft.y * h);
         const sway = this.moving ? Math.round(Math.sin(t * 1.6 + tuft.phase) * 0.6) : 0;
-        px(ctx, x, y - 2, 1, 2, "#2d6a4f");
-        px(ctx, x + 2 + sway, y - 3, 1, 3, "#40916c");
+        px(ctx, x, y - 2, 1, 2, "#245c3e");
+        px(ctx, x + 2 + sway, y - 3, 1, 3, "#367a52");
         if (tuft.phase < 2.6 && life > 28) {
           px(ctx, x + 1 + sway, y - 4, 2, 2, tuft.flowerColor);
         }
@@ -501,21 +618,17 @@
         if (kind === "fire") {
           const flick = Math.floor(t * 9 + i) % 3;
           const fh = ri(5 + flick * 2 + 3 * Math.sin(t * 6 + p.phase) ** 2);
-          // Warm pixel ground glow
           px(ctx, x - 4, y - 1, 9, 2, "rgba(247, 127, 0, 0.45)");
-          // 3-tone flickering pixel flame
           px(ctx, x - 2, y - fh, 5, fh, "#d62828");
           px(ctx, x - 1, y - fh - 1, 3, 2, "#e63946");
           px(ctx, x - 1, y - fh + 2, 3, Math.max(1, fh - 2), "#f77f00");
           px(ctx, x, y - Math.max(1, fh - 3), 1, 2, "#fcbf49");
-          // Rising pixel ember & smoke
           const ember = (t * 0.65 + p.y) % 1;
           px(ctx, x + Math.round(Math.sin(ember * 6 + i) * 2), y - fh - ember * 12, 1, 1, "#fff3b0");
           if (i % 2 === 0) {
             px(ctx, x - 1, y - fh - 4 - ember * 10, 2, 2, "rgba(70, 75, 80, 0.55)");
           }
         } else {
-          // Animated 2-frame pixel beetle swarming
           const dx = ri(Math.sin(t * 3.0 + p.phase) * 7);
           const dy = ri(Math.cos(t * 4.2 + p.phase) * 4);
           const wing = Math.floor(t * 12 + i) % 2;

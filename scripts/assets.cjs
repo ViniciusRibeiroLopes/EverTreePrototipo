@@ -15,6 +15,8 @@ module.exports = [
   "motion.css",
   "motion-observer.js",
   "game-fx.js",
+  "story-reel.css",
+  "story-reel.js",
   "images/valley.jpg",
   "images/valley-restored.jpg",
   ...["pioneer", "ipe", "jacaranda", "sequoia", "aurora", "lumina"].map(

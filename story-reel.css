@@ -1,0 +1,346 @@
+/*
+ * EverTree — Story Reel & Live Ecological Explainer Styles
+ * Arquitetura inspirada em:
+ *  - hyperframes-motion-reel-skill (clip-path geometric reveals, animation-fill-mode: both, GPU transforms)
+ *  - claude-motion-design (spring cubic-bezier, editorial typography stagger)
+ *  - cth9191/animate (procedural canvas theatre framing)
+ */
+
+.story-reel-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid #3c5945;
+  background: #203427;
+  color: #d7ebb9;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    background 0.2s cubic-bezier(.16, 1, .3, 1),
+    border-color 0.2s cubic-bezier(.16, 1, .3, 1),
+    transform 0.2s cubic-bezier(.22, .68, 0, 1.2);
+}
+
+.story-reel-trigger:hover {
+  background: #294633;
+  border-color: #c6e593;
+  transform: translateY(-1px);
+}
+
+.story-reel-trigger .reel-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c6e593;
+  box-shadow: 0 0 8px rgba(198, 229, 147, 0.7);
+}
+
+/* Docked animated reel strip inside .habitat */
+.story-reel-dock {
+  background: linear-gradient(180deg, #13211a 0%, #172820 100%);
+  border-top: 1px solid #2b4234;
+  border-bottom: 1px solid #2b4234;
+  overflow: hidden;
+  clip-path: inset(0 0 0 0);
+  transition:
+    clip-path 0.55s cubic-bezier(.16, 1, .3, 1),
+    opacity 0.35s ease;
+}
+
+.story-reel-dock[hidden] {
+  display: none !important;
+}
+
+.story-reel-dock.reel-entering {
+  animation: reelClipReveal 0.65s cubic-bezier(.16, 1, .3, 1) both;
+}
+
+@keyframes reelClipReveal {
+  from {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.story-reel-inner {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 18px;
+}
+
+.story-reel-stage {
+  position: relative;
+  width: 220px;
+  height: 112px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #385241;
+  background: #0e1a14;
+  box-shadow: inset 0 0 0 1px rgba(198, 229, 147, 0.08);
+  flex-shrink: 0;
+}
+
+.story-reel-stage canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.story-reel-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(14, 26, 20, 0.84);
+  border: 1px solid rgba(198, 229, 147, 0.35);
+  color: #c6e593;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  pointer-events: none;
+}
+
+.story-reel-copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.story-reel-eyebrow {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  color: #c6e593;
+}
+
+.story-reel-title {
+  margin: 0;
+  font: 500 18px/1.2 Georgia, serif;
+  color: #f3f1df;
+  letter-spacing: -0.4px;
+}
+
+.story-reel-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #bfd0c0;
+  max-width: 58ch;
+}
+
+/* Beat choreography using clip-path + transform (HyperFrames timing contract) */
+.story-reel-copy.beat-swap .story-reel-eyebrow,
+.story-reel-copy.beat-swap .story-reel-title,
+.story-reel-copy.beat-swap .story-reel-text {
+  animation: reelBeatIn 0.45s cubic-bezier(.22, .68, 0, 1.2) both;
+}
+
+.story-reel-copy.beat-swap .story-reel-title {
+  animation-delay: 60ms;
+}
+
+.story-reel-copy.beat-swap .story-reel-text {
+  animation-delay: 120ms;
+}
+
+@keyframes reelBeatIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.story-reel-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.story-reel-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.story-reel-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid #354c3d;
+  background: #1d3126;
+  color: #dbe6d2;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  padding: 0;
+  transition: background 0.18s, border-color 0.18s, transform 0.18s cubic-bezier(.22, .68, 0, 1.2);
+}
+
+.story-reel-btn:hover {
+  background: #294535;
+  border-color: #c6e593;
+  transform: translateY(-1px);
+}
+
+.story-reel-chapters {
+  display: flex;
+  gap: 5px;
+}
+
+.story-reel-chapters button {
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid #33493b;
+  background: #192a20;
+  color: #9cb09e;
+  font-size: 10px;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(.16, 1, .3, 1);
+}
+
+.story-reel-chapters button.active {
+  background: #c6e593;
+  border-color: #c6e593;
+  color: #16291f;
+}
+
+.story-reel-chapters button.locked {
+  opacity: 0.55;
+}
+
+.story-reel-progress {
+  height: 2px;
+  width: 100%;
+  background: #23382b;
+  overflow: hidden;
+}
+
+.story-reel-progress > i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #74c69d, #c6e593);
+  transform-origin: left center;
+  transform: scaleX(0);
+}
+
+/* Live Eco-Pulse Callout inside scene (non-blocking) */
+.eco-callout {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  z-index: 4;
+  max-width: min(350px, calc(100% - 28px));
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 13px;
+  border-radius: 11px;
+  background: rgba(16, 30, 23, 0.90);
+  border: 1px solid rgba(198, 229, 147, 0.42);
+  box-shadow: 0 8px 22px rgba(6, 14, 10, 0.45);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+  color: #f3f1df;
+  animation: ecoCalloutIn 0.45s cubic-bezier(.22, .68, 0, 1.2) both;
+}
+
+.eco-callout.leaving {
+  animation: ecoCalloutOut 0.35s cubic-bezier(.55, 0, 1, .45) both;
+}
+
+.eco-callout-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: rgba(198, 229, 147, 0.16);
+  color: #c6e593;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.eco-callout-body strong {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  color: #c6e593;
+  margin-bottom: 2px;
+}
+
+.eco-callout-body span {
+  display: block;
+  font-size: 11.5px;
+  line-height: 1.38;
+  color: #dce7d8;
+}
+
+@keyframes ecoCalloutIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes ecoCalloutOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (max-width: 720px) {
+  .story-reel-inner {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .story-reel-stage {
+    width: 100%;
+    height: 120px;
+  }
+  .story-reel-controls {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-reel-dock.reel-entering,
+  .story-reel-copy.beat-swap .story-reel-eyebrow,
+  .story-reel-copy.beat-swap .story-reel-title,
+  .story-reel-copy.beat-swap .story-reel-text,
+  .eco-callout,
+  .eco-callout.leaving {
+    animation: none !important;
+    clip-path: none !important;
+  }
+}
