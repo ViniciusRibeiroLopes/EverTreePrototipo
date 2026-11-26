@@ -1,0 +1,455 @@
+/*
+ * EverTree — Motion Design System
+ * Inspirado em: hyperframes-motion-reel-skill + cth9191/animate
+ *
+ * Principios:
+ *  - Hardware-accelerated (transform, opacity) — sem layout thrashing
+ *  - animation-fill-mode: both em todos os keyframes
+ *  - Respeita prefers-reduced-motion
+ *  - Timing grid baseado em 60fps / ritmo 120 BPM equivalente
+ */
+
+/* ══════════════════════════════════════════════════════════
+   0. TOKENS DE MOTION
+══════════════════════════════════════════════════════════ */
+:root {
+  --ease-spring:   cubic-bezier(.22,.68,0,1.2);
+  --ease-out:      cubic-bezier(.16,1,.3,1);
+  --ease-in:       cubic-bezier(.55,0,1,.45);
+  --ease-inout:    cubic-bezier(.65,0,.35,1);
+
+  --dur-instant:   100ms;
+  --dur-fast:      200ms;
+  --dur-normal:    350ms;
+  --dur-slow:      550ms;
+  --dur-xslow:     800ms;
+
+  --motion-safe: 1; /* sobrescrito abaixo se reduced */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --motion-safe: 0; }
+  *,
+  *::before,
+  *::after {
+    animation-duration:   0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration:  0.01ms !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   1. KEYFRAMES REUTILIZÁVEIS
+══════════════════════════════════════════════════════════ */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes popIn {
+  0%   { opacity: 0; transform: scale(0.7) rotate(-4deg); }
+  60%  { transform: scale(1.06) rotate(1deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+@keyframes pulseGlow {
+  0%,100% { box-shadow: 0 0 0 0 rgba(198,229,147,0); }
+  50%     { box-shadow: 0 0 18px 4px rgba(198,229,147,0.22); }
+}
+
+@keyframes leafFloat {
+  0%   { transform: translateY(0) rotate(0deg); }
+  33%  { transform: translateY(-8px) rotate(3deg); }
+  66%  { transform: translateY(-4px) rotate(-2deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+
+@keyframes sway {
+  0%,100% { transform: rotate(-1.5deg) skewX(-0.5deg); }
+  50%     { transform: rotate(1.5deg)  skewX(0.5deg); }
+}
+
+@keyframes cloud-drift {
+  from { transform: translateX(-18px); }
+  to   { transform: translateX(18px); }
+}
+
+@keyframes flow {
+  to { stroke-dashoffset: -35; }
+}
+
+@keyframes bird-flight {
+  0%,100% { transform: translate(0,0) scaleX(1); }
+  50%     { transform: translate(28px,-11px) scaleX(1); }
+}
+
+@keyframes flutter {
+  0%,100% { transform: translate(0,0) rotate(0deg); }
+  25%     { transform: translate(8px,-10px) rotate(14deg); }
+  75%     { transform: translate(-6px,-6px) rotate(-10deg); }
+}
+
+@keyframes float-up {
+  from { opacity: 1; transform: translate(-50%,0) scale(1); }
+  to   { opacity: 0; transform: translate(-50%,-55px) scale(0.7); }
+}
+
+@keyframes rain-fall {
+  to { background-position: 0 95px; }
+}
+
+@keyframes progressGrow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes countUp {
+  from { opacity: 0; transform: scale(0.85) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes borderPulse {
+  0%,100% { border-color: var(--border, #e1e7dc); }
+  50%     { border-color: rgba(198,229,147,0.6); }
+}
+
+@keyframes ringExpand {
+  0%   { transform: scale(0.9); opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   2. UTILITY CLASSES — uso direto no HTML
+══════════════════════════════════════════════════════════ */
+
+.animate-fadeInUp  { animation: fadeInUp  var(--dur-slow) var(--ease-spring) both; }
+.animate-fadeInDown{ animation: fadeInDown var(--dur-slow) var(--ease-spring) both; }
+.animate-fadeIn    { animation: fadeIn     var(--dur-slow) var(--ease-out) both; }
+.animate-scaleIn   { animation: scaleIn    var(--dur-slow) var(--ease-spring) both; }
+.animate-slideRight{ animation: slideInRight var(--dur-slow) var(--ease-spring) both; }
+.animate-popIn     { animation: popIn      var(--dur-slow) var(--ease-spring) both; }
+
+/* Delay helpers */
+.delay-1 { animation-delay:  80ms; }
+.delay-2 { animation-delay: 160ms; }
+.delay-3 { animation-delay: 240ms; }
+.delay-4 { animation-delay: 350ms; }
+.delay-5 { animation-delay: 480ms; }
+
+/* ══════════════════════════════════════════════════════════
+   3. MELHORIAS ESPECÍFICAS DO EVTREE
+══════════════════════════════════════════════════════════ */
+
+/* ── 3a. Header — entrada com slide + fade ── */
+.game-header {
+  animation: fadeInDown var(--dur-slow) var(--ease-spring) both;
+}
+
+/* ── 3b. Brand mark — pop ao carregar ── */
+.brand-mark {
+  animation: popIn var(--dur-xslow) var(--ease-spring) 200ms both;
+}
+
+/* ── 3c. Nav buttons — hover com translate suave ── */
+.game-nav button {
+  transition:
+    background  var(--dur-fast) var(--ease-out),
+    color       var(--dur-fast) var(--ease-out),
+    transform   var(--dur-fast) var(--ease-spring);
+}
+.game-nav button:hover {
+  transform: translateY(-1px);
+}
+.game-nav button.active {
+  transform: none;
+}
+
+/* ── 3d. Folha flutuante ── */
+.floating-leaf {
+  position: absolute;
+  pointer-events: none;
+  animation: float-up 1s var(--ease-out) forwards;
+  will-change: transform, opacity;
+}
+
+/* ── 3e. Árvore — oscillação suave ── */
+.tree-crown {
+  animation: sway 6s ease-in-out infinite;
+  transform-origin: center bottom;
+  will-change: transform;
+}
+
+/* ── 3f. Cards de espécie — entrada stagger ── */
+.species-card,
+.upgrade-card {
+  animation: fadeInUp var(--dur-slow) var(--ease-spring) both;
+  transition:
+    transform   var(--dur-normal) var(--ease-spring),
+    box-shadow  var(--dur-normal) var(--ease-out),
+    border-color var(--dur-normal) var(--ease-out);
+  will-change: transform;
+}
+.species-card:hover,
+.upgrade-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(37,75,53,0.18);
+}
+.species-card:active,
+.upgrade-card:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ── 3g. Botão primário — ripple glow ── */
+.primary-button {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform   var(--dur-fast) var(--ease-spring),
+    box-shadow  var(--dur-fast) var(--ease-out),
+    background  var(--dur-fast);
+}
+.primary-button::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  animation: pulseGlow 2.5s ease-in-out infinite;
+  pointer-events: none;
+}
+.primary-button:hover {
+  transform: translateY(-1px);
+}
+.primary-button:active:not(:disabled) {
+  transform: scale(0.97);
+  box-shadow: none;
+}
+
+/* ── 3h. Barra de progresso — cresce com transform ── */
+#recovery-bar,
+#prestige-bar,
+.sidebar-progress i,
+.resource-bar i {
+  transform-origin: left center;
+  transition: transform 1.2s var(--ease-out);
+  will-change: transform;
+}
+
+/* ── 3i. Toast — entra por baixo e some ── */
+.toast {
+  animation: fadeInUp var(--dur-normal) var(--ease-spring) both;
+  will-change: transform, opacity;
+}
+.toast.exit {
+  animation: fadeInDown var(--dur-fast) var(--ease-in) both reverse;
+}
+
+/* ── 3j. Dialog / Panel — scale in ── */
+#game-panel[open],
+#info-dialog[open] {
+  animation: scaleIn var(--dur-slow) var(--ease-spring) both;
+}
+dialog::backdrop {
+  animation: fadeIn var(--dur-slow) var(--ease-out) both;
+  background: rgba(10,25,16,0.75);
+  backdrop-filter: blur(4px);
+}
+
+/* ── 3k. Seção ativa — fade in quando exibida ── */
+.view:not([hidden]) {
+  animation: fadeInUp var(--dur-slow) var(--ease-spring) both;
+}
+
+/* ── 3l. Dot de status — pulsa ── */
+.status-dot {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* ── 3m. Scroll-reveal (via classe adicionada por JS) ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity  var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-spring);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── 3n. Shop item — shimmer ao ser desbloqueado ── */
+.shop-item.unlocked .item-name::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(198,229,147,0.35) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1s var(--ease-out) both;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* ── 3o. Número de folhas — anima ao mudar (JS acrescenta .bump) ── */
+#garden-leaves.bump {
+  animation: countUp var(--dur-fast) var(--ease-spring) both;
+}
+
+/* ── 3p. Nuvens e fauna já declaradas em styles.css, apenas refinamos ── */
+.cloud-a { animation-timing-function: ease-in-out; }
+.cloud-b { animation-timing-function: ease-in-out; }
+
+/* ── 3q. Entrada da descoberta de espécie (dialog art) ── */
+#dialog-art {
+  animation: popIn var(--dur-xslow) var(--ease-spring) both;
+}
+#dialog-title,
+#dialog-body {
+  animation: fadeInUp var(--dur-slow) var(--ease-spring) 150ms both;
+}
+
+/* ── 3r. Legado / crown ── */
+.legacy-crown {
+  animation: leafFloat 4s ease-in-out infinite;
+  display: inline-block;
+  will-change: transform;
+}
+
+/* ── 3s. Hover no score / leaf-counter ── */
+.leaf-counter {
+  transition: transform var(--dur-fast) var(--ease-spring);
+}
+.leaf-counter:hover {
+  transform: scale(1.03);
+}
+
+/* ── 3t. Botão de regar — ring ao clicar ── */
+.water-action {
+  position: relative;
+  transition:
+    transform var(--dur-fast) var(--ease-spring),
+    background var(--dur-fast);
+}
+.water-action::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 2px solid rgba(100,180,210,0.5);
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.9);
+  transition: none;
+}
+.water-action.ripple::before {
+  animation: ringExpand 0.5s var(--ease-out) both;
+}
+
+/* ══════════════════════════════════════════════════════════
+   4. SCROLL-REVEAL OBSERVER (ativado via JS)
+══════════════════════════════════════════════════════════ */
+/* Nada aqui — lógica no motion-observer.js */
+
+/* ══════════════════════════════════════════════════════════
+   5. MICRO-INTERAÇÕES
+══════════════════════════════════════════════════════════ */
+
+/* Tabs do shop — underline slide */
+.shop-tabs button {
+  position: relative;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.shop-tabs button::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  right: 50%;
+  height: 2px;
+  background: var(--spring, #c6e593);
+  border-radius: 2px;
+  transition: left var(--dur-normal) var(--ease-spring),
+              right var(--dur-normal) var(--ease-spring);
+}
+.shop-tabs button[aria-selected="true"]::after {
+  left: 8px;
+  right: 8px;
+}
+
+/* Input focus — ring verde */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(198,229,147,0.6);
+  outline-offset: 2px;
+  transition: outline-color var(--dur-fast);
+}
+
+/* Rescue overlay — pulse border */
+.rescue-overlay {
+  animation: borderPulse 1.6s ease-in-out infinite;
+}
+
+/* Event alert — chamar atenção */
+.event-alert {
+  animation: pulseGlow 1.2s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════════════════════════
+   6. SAFE DEFAULTS (não-animated fallbacks)
+══════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fadeInUp,
+  .animate-fadeInDown,
+  .animate-fadeIn,
+  .animate-scaleIn,
+  .animate-slideRight,
+  .animate-popIn,
+  .tree-crown,
+  .legacy-crown,
+  .floating-leaf,
+  .primary-button::after,
+  .event-alert,
+  .rescue-overlay,
+  .cloud-a,
+  .cloud-b,
+  .water-line,
+  .birds,
+  .butterfly {
+    animation: none !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
