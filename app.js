@@ -205,9 +205,12 @@
         button.dataset.target = i;
         button.style.gridArea = (1 + Math.floor(i / 4)) + " / " + (1 + i % 4);
         button.setAttribute("aria-label", (fire ? "Apagar foco" : "Espantar praga") + " " + (i + 1));
+        button.dataset.kind = event.type;
         const icon = document.createElement("span");
         icon.ariaHidden = "true";
-        icon.textContent = fire ? "🔥" : "🐛";
+        icon.innerHTML = fire
+          ? `<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path fill="#d62828" d="M7 1h2v2h1v2h2v3h1v4h-1v2H4v-2H3V8h1V6h2V3h1z"/><path fill="#f77f00" d="M7 4h2v2h2v3h1v3h-1v2H5v-2H4V9h1V7h2z"/><path fill="#fcbf49" d="M7 7h2v2h1v3H9v2H7v-2H6V9h1z"/><path fill="#fff3b0" d="M7 10h2v3H7z"/></svg>`
+          : `<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path fill="#dbe7f0" d="M2 4h4v3H3V6H2zm8 0h4v2h-1v1h-3z"/><path fill="#1d1829" d="M6 3h4v2h2v6h-2v2H6v-2H4V5h2z"/><path fill="#40916c" d="M6 5h4v6H6z"/><path fill="#ffbe0b" d="M7 5h2v2H7zm0 4h2v1H7z"/><path fill="#ff595e" d="M6 3h1v1H6zm3 0h1v1H9z"/></svg>`;
         button.append(icon);
         return button;
       });

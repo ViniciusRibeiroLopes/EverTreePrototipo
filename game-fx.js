@@ -383,8 +383,8 @@
     const cx = rect.left + rect.width/2  - scRect.left;
     const cy = rect.top  + rect.height/2 - scRect.top;
 
-    // Detectar tipo de evento pelo ícone
-    const isfire = btn.textContent.includes('🔥');
+    // Detectar tipo de evento pelo dataset ou ícone
+    const isfire = btn.dataset.kind === 'fire' || btn.textContent.includes('🔥');
     if (isfire) {
       // Extinguir: bolhas de água
       spawnBurst({ x:cx, y:cy, count:8, colors:['#4aa8d8','#8ed4f0','#c3eaf7'], speed:60, life:0.6 });

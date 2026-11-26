@@ -8,8 +8,13 @@ module.exports = [
   "upgrades.css",
   "engine.js",
   "audio.js",
+  "pixel-trees.js",
   "scene.js",
   "app.js",
+  "intro.js",
+  "motion.css",
+  "motion-observer.js",
+  "game-fx.js",
   "images/valley.jpg",
   "images/valley-restored.jpg",
   ...["pioneer", "ipe", "jacaranda", "sequoia", "aurora", "lumina"].map(
